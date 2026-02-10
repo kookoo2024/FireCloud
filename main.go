@@ -336,24 +336,41 @@ func openBrowser(url string) {
 	cmd.Start()
 }
 
-// ===== 生成托盘图标（32x32 火焰渐变圆形 PNG） =====
+// ===== 生成托盘图标（32x32 字母 T 样式 PNG） =====
 func createFireIcon() []byte {
 	const sz = 32
 	img := image.NewRGBA(image.Rect(0, 0, sz, sz))
+
+	// 背景颜色：深紫色
+	bgColor := color.RGBA{124, 106, 255, 255}
+	// 文字颜色：白色
+	fgColor := color.RGBA{255, 255, 255, 255}
+
 	c := float64(sz) / 2
 	for y := 0; y < sz; y++ {
 		for x := 0; x < sz; x++ {
 			dx, dy := float64(x)-c, float64(y)-c
-			dist := math.Sqrt(dx*dx+dy*dy) / c
-			if dist <= 1.0 {
-				t := 1.0 - dist
-				r := uint8(min(255, 180+int(75*t)))
-				g := uint8(min(255, int(60*t+100*t*t)))
-				b := uint8(min(255, int(20*t)))
-				img.Set(x, y, color.RGBA{r, g, b, 255})
+			dist := math.Sqrt(dx*dx + dy*dy)
+			if dist <= c {
+				img.Set(x, y, bgColor)
 			}
 		}
 	}
+
+	// 绘制字母 T (点阵模拟)
+	// 横杠
+	for x := 8; x <= 24; x++ {
+		for y := 8; y <= 11; y++ {
+			img.Set(x, y, fgColor)
+		}
+	}
+	// 竖杠
+	for x := 14; x <= 18; x++ {
+		for y := 11; y <= 24; y++ {
+			img.Set(x, y, fgColor)
+		}
+	}
+
 	var buf bytes.Buffer
 	png.Encode(&buf, img)
 	return buf.Bytes()
