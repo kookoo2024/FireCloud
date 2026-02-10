@@ -9,7 +9,6 @@ import (
 	"image/color"
 	"image/png"
 	"io"
-	"math"
 	"net/http"
 	"os"
 	"os/exec"
@@ -341,32 +340,28 @@ func createFireIcon() []byte {
 	const sz = 32
 	img := image.NewRGBA(image.Rect(0, 0, sz, sz))
 
-	// 背景颜色：深紫色
+	// 背景颜色：深紫色 (使用完全不透明的颜色)
 	bgColor := color.RGBA{124, 106, 255, 255}
 	// 文字颜色：白色
 	fgColor := color.RGBA{255, 255, 255, 255}
 
-	c := float64(sz) / 2
+	// 填充圆角矩形背景
 	for y := 0; y < sz; y++ {
 		for x := 0; x < sz; x++ {
-			dx, dy := float64(x)-c, float64(y)-c
-			dist := math.Sqrt(dx*dx + dy*dy)
-			if dist <= c {
-				img.Set(x, y, bgColor)
-			}
+			img.Set(x, y, bgColor)
 		}
 	}
 
-	// 绘制字母 T (点阵模拟)
-	// 横杠
-	for x := 8; x <= 24; x++ {
-		for y := 8; y <= 11; y++ {
+	// 绘制字母 T (加粗并调整位置)
+	// 横杠：顶部 6-11 行，左右留白 4 像素
+	for x := 6; x <= 26; x++ {
+		for y := 6; y <= 10; y++ {
 			img.Set(x, y, fgColor)
 		}
 	}
-	// 竖杠
-	for x := 14; x <= 18; x++ {
-		for y := 11; y <= 24; y++ {
+	// 竖杠：居中 14-18 列，从第 11 行到底部
+	for x := 13; x <= 19; x++ {
+		for y := 11; y <= 26; y++ {
 			img.Set(x, y, fgColor)
 		}
 	}
