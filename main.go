@@ -20,7 +20,7 @@ import (
 
 	"net"
 
-	"github.com/getlantern/systray"
+	"github.com/fyne-io/systray"
 )
 
 //go:embed static/*
@@ -340,28 +340,32 @@ func createFireIcon() []byte {
 	const sz = 32
 	img := image.NewRGBA(image.Rect(0, 0, sz, sz))
 
-	// 背景颜色：深紫色 (使用完全不透明的颜色)
+	// 背景颜色：深紫色
 	bgColor := color.RGBA{124, 106, 255, 255}
 	// 文字颜色：白色
 	fgColor := color.RGBA{255, 255, 255, 255}
 
-	// 填充圆角矩形背景
+	// 填充圆角矩形背景 (使用圆角效果避免生硬)
+	c := float64(sz) / 2
 	for y := 0; y < sz; y++ {
 		for x := 0; x < sz; x++ {
-			img.Set(x, y, bgColor)
+			dx, dy := float64(x)-c, float64(y)-c
+			if dx*dx+dy*dy <= c*c {
+				img.Set(x, y, bgColor)
+			}
 		}
 	}
 
-	// 绘制字母 T (加粗并调整位置)
-	// 横杠：顶部 6-11 行，左右留白 4 像素
-	for x := 6; x <= 26; x++ {
-		for y := 6; y <= 10; y++ {
+	// 绘制字母 T (居中并加粗)
+	// 横杠
+	for x := 7; x <= 25; x++ {
+		for y := 7; y <= 11; y++ {
 			img.Set(x, y, fgColor)
 		}
 	}
-	// 竖杠：居中 14-18 列，从第 11 行到底部
+	// 竖杠
 	for x := 13; x <= 19; x++ {
-		for y := 11; y <= 26; y++ {
+		for y := 12; y <= 25; y++ {
 			img.Set(x, y, fgColor)
 		}
 	}
