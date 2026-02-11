@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"embed"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"image"
@@ -10,6 +11,7 @@ import (
 	"image/png"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -20,7 +22,8 @@ import (
 
 	"net"
 
-	"github.com/fyne-io/systray"
+	"github.com/getlantern/systray"
+	"github.com/skip2/go-qrcode"
 )
 
 //go:embed static/*
@@ -57,10 +60,12 @@ func onReady() {
 	mOpen := systray.AddMenuItem("🌐 打开浏览器", "打开管理页面")
 	mDir := systray.AddMenuItem("📁 打开 D:\\Fire", "打开文件目录")
 	systray.AddSeparator()
+	mAutoStart := systray.AddMenuItemCheckbox("🚀 开机启动", "设置程序开机自动运行", isAutoStartEnabled())
+	systray.AddSeparator()
 	mInfo := systray.AddMenuItem("📡 "+getLocalIP()+listenAddr, "服务地址")
 	mInfo.Disable()
 	systray.AddSeparator()
-	mQuit := systray.AddMenuItem("❌ 退出 FireCloud", "关闭服务并退出")
+	mQuit := systray.AddMenuItem("❌ 退出", "关闭服务并退出")
 
 	go startServer()
 	go func() {
@@ -75,6 +80,16 @@ func onReady() {
 				openBrowser(fmt.Sprintf("http://localhost%s", listenAddr))
 			case <-mDir.ClickedCh:
 				exec.Command("explorer", rootDir).Start()
+			case <-mAutoStart.ClickedCh:
+				if mAutoStart.Checked() {
+					if disableAutoStart() {
+						mAutoStart.Uncheck()
+					}
+				} else {
+					if enableAutoStart() {
+						mAutoStart.Check()
+					}
+				}
 			case <-mQuit.ClickedCh:
 				systray.Quit()
 			}
@@ -89,11 +104,37 @@ func onExit() {
 	os.Exit(0)
 }
 
+// ===== Windows 开机启动管理 =====
+const runKey = `Software\Microsoft\Windows\CurrentVersion\Run`
+const appName = "FireCloud"
+
+func isAutoStartEnabled() bool {
+	if runtime.GOOS != "windows" {
+		return false
+	}
+	cmd := exec.Command("reg", "query", "HKCU\\"+runKey, "/v", appName)
+	return cmd.Run() == nil
+}
+
+func enableAutoStart() bool {
+	exe, err := os.Executable()
+	if err != nil {
+		return false
+	}
+	cmd := exec.Command("reg", "add", "HKCU\\"+runKey, "/v", appName, "/t", "REG_SZ", "/d", exe, "/f")
+	return cmd.Run() == nil
+}
+
+func disableAutoStart() bool {
+	cmd := exec.Command("reg", "delete", "HKCU\\"+runKey, "/v", appName, "/f")
+	return cmd.Run() == nil
+}
+
 func startServer() {
 	mux := http.NewServeMux()
+	mux.HandleFunc("/api/share", handleShare)
 	mux.HandleFunc("/api/list", handleList)
 	mux.HandleFunc("/api/upload", handleUpload)
-	mux.HandleFunc("/api/delete", handleDelete)
 	mux.HandleFunc("/api/mkdir", handleMkdir)
 
 	mux.HandleFunc("/api/status", handleStatus)
@@ -213,25 +254,6 @@ func handleUpload(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("OK"))
 }
 
-func handleDelete(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodDelete {
-		http.Error(w, "方法不允许", http.StatusMethodNotAllowed)
-		return
-	}
-	relPath := cleanRelPath(r.URL.Query().Get("path"))
-	if relPath == "" {
-		http.Error(w, "缺少路径参数", http.StatusBadRequest)
-		return
-	}
-	absPath := filepath.Join(rootDir, filepath.FromSlash(relPath))
-	if !isPathSafe(absPath) || absPath == filepath.Clean(rootDir) {
-		http.Error(w, "禁止操作", http.StatusForbidden)
-		return
-	}
-	os.RemoveAll(absPath)
-	w.Write([]byte("OK"))
-}
-
 func handleMkdir(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "方法不允许", http.StatusMethodNotAllowed)
@@ -335,42 +357,119 @@ func openBrowser(url string) {
 	cmd.Start()
 }
 
-// ===== 生成托盘图标（32x32 字母 T 样式 PNG） =====
+// ===== 生成托盘图标（64x64 显眼的星形图标 ★） =====
 func createFireIcon() []byte {
-	const sz = 32
+	const sz = 64
 	img := image.NewRGBA(image.Rect(0, 0, sz, sz))
 
-	// 背景颜色：深紫色
-	bgColor := color.RGBA{124, 106, 255, 255}
-	// 文字颜色：白色
-	fgColor := color.RGBA{255, 255, 255, 255}
+	// 金黄色星星，更显眼
+	starColor := color.RGBA{255, 215, 0, 255} // 金色
 
-	// 填充圆角矩形背景 (使用圆角效果避免生硬)
-	c := float64(sz) / 2
+	cx, cy := float64(sz)/2, float64(sz)/2
+
+	// 生成五角星的顶点坐标
+	points := make([][2]float64, 10)
+	outerRadius := float64(sz) * 0.45
+	innerRadius := outerRadius * 0.4
+
+	for i := 0; i < 10; i++ {
+		angle := float64(i)*36.0 - 90.0 // 从顶部开始，每36度一个点
+		rad := angle * 3.14159265359 / 180.0
+		var r float64
+		if i%2 == 0 {
+			r = outerRadius
+		} else {
+			r = innerRadius
+		}
+		points[i][0] = cx + r*float64(cos(rad))
+		points[i][1] = cy + r*float64(sin(rad))
+	}
+
+	// 填充星形
 	for y := 0; y < sz; y++ {
 		for x := 0; x < sz; x++ {
-			dx, dy := float64(x)-c, float64(y)-c
-			if dx*dx+dy*dy <= c*c {
-				img.Set(x, y, bgColor)
+			if isInsidePolygon(float64(x), float64(y), points) {
+				img.Set(x, y, starColor)
 			}
-		}
-	}
-
-	// 绘制字母 T (居中并加粗)
-	// 横杠
-	for x := 7; x <= 25; x++ {
-		for y := 7; y <= 11; y++ {
-			img.Set(x, y, fgColor)
-		}
-	}
-	// 竖杠
-	for x := 13; x <= 19; x++ {
-		for y := 12; y <= 25; y++ {
-			img.Set(x, y, fgColor)
 		}
 	}
 
 	var buf bytes.Buffer
 	png.Encode(&buf, img)
 	return buf.Bytes()
+}
+
+// 简单的三角函数实现
+func cos(rad float64) float64 {
+	// 使用泰勒级数近似
+	x := rad
+	result := 1.0
+	term := 1.0
+	for i := 1; i <= 10; i++ {
+		term *= -x * x / float64(2*i*(2*i-1))
+		result += term
+	}
+	return result
+}
+
+func sin(rad float64) float64 {
+	// 使用泰勒级数近似
+	x := rad
+	result := x
+	term := x
+	for i := 1; i <= 10; i++ {
+		term *= -x * x / float64(2*i*(2*i+1))
+		result += term
+	}
+	return result
+}
+
+// 判断点是否在多边形内（射线法）
+func isInsidePolygon(x, y float64, points [][2]float64) bool {
+	n := len(points)
+	inside := false
+
+	j := n - 1
+	for i := 0; i < n; i++ {
+		xi, yi := points[i][0], points[i][1]
+		xj, yj := points[j][0], points[j][1]
+
+		if ((yi > y) != (yj > y)) && (x < (xj-xi)*(y-yi)/(yj-yi)+xi) {
+			inside = !inside
+		}
+		j = i
+	}
+
+	return inside
+}
+
+func handleShare(w http.ResponseWriter, r *http.Request) {
+	path := r.URL.Query().Get("path")
+	if path == "" {
+		http.Error(w, "Path required", 400)
+		return
+	}
+
+	// Encode path segments properly
+	parts := strings.Split(path, "/")
+	var encodedParts []string
+	for _, p := range parts {
+		encodedParts = append(encodedParts, url.PathEscape(p))
+	}
+	encodedPath := strings.Join(encodedParts, "/")
+
+	// Use r.Host to respect the actual hostname/IP used by the client
+	fullURL := fmt.Sprintf("http://%s/files/%s", r.Host, encodedPath)
+
+	png, err := qrcode.Encode(fullURL, qrcode.Medium, 256)
+	if err != nil {
+		http.Error(w, "QR Generation failed", 500)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{
+		"url": fullURL,
+		"qr":  base64.StdEncoding.EncodeToString(png),
+	})
 }

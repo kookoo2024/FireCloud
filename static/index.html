@@ -22,9 +22,26 @@
             --border: rgba(255, 255, 255, .06);
             --green: #34d399;
             --red: #f87171;
+            --header-bg: rgba(10, 10, 15, .88);
             --r: 12px;
             --rs: 8px;
-            --tr: .2s cubic-bezier(.4, 0, .2, 1)
+            --tr: .2s cubic-bezier(.4, 0, .2, 1);
+        }
+
+        :root[data-theme="light"] {
+            --bg0: #f3f4f6;
+            --bg1: #ffffff;
+            --bg2: #e5e7eb;
+            --bg3: #d1d5db;
+            --bg4: #9ca3af;
+            /* 滚动条等颜色加深 */
+            --t1: #111827;
+            --t2: #4b5563;
+            --t3: #6b7280;
+            --border: rgba(0, 0, 0, 0.08);
+            /* 边框更淡 */
+            --header-bg: rgba(255, 255, 255, .85);
+            --glow: rgba(124, 106, 255, .1);
         }
 
         * {
@@ -38,7 +55,8 @@
             background: var(--bg0);
             color: var(--t1);
             min-height: 100vh;
-            overflow-x: hidden
+            overflow-x: hidden;
+            transition: background 0.3s, color 0.3s;
         }
 
         button {
@@ -64,9 +82,10 @@
             align-items: center;
             height: 56px;
             padding: 0 24px;
-            background: rgba(10, 10, 15, .88);
+            background: var(--header-bg);
             backdrop-filter: blur(24px) saturate(1.5);
-            border-bottom: 1px solid var(--border)
+            border-bottom: 1px solid var(--border);
+            transition: background 0.3s, border-color 0.3s;
         }
 
         .logo {
@@ -176,6 +195,10 @@
             border-color: rgba(255, 255, 255, .1)
         }
 
+        :root[data-theme="light"] .icon-btn:hover {
+            border-color: rgba(0, 0, 0, 0.1);
+        }
+
         .ip-badge {
             display: flex;
             align-items: center;
@@ -226,6 +249,10 @@
             align-items: center;
             justify-content: center;
             pointer-events: none
+        }
+
+        :root[data-theme="light"] .drag-overlay {
+            background: rgba(255, 255, 255, .85);
         }
 
         .drag-overlay.show {
@@ -286,14 +313,17 @@
             font-size: 14px;
             font-weight: 500;
             white-space: nowrap;
-            color: #f1f1f1;
+            color: var(--t2);
+            /* changed from fixed color */
             transition: all 0.2s
         }
 
         .chip.act {
-            background: #fff;
-            color: #000;
-            border-color: #fff
+            background: var(--t1);
+            /* changed from #fff */
+            color: var(--bg0);
+            /* changed from #000 */
+            border-color: var(--t1)
         }
 
         .chip:hover:not(.act) {
@@ -322,10 +352,36 @@
             width: 100%;
             aspect-ratio: 16/9;
             border-radius: 12px;
-            background: #222;
+            background: var(--bg2);
+            /* changed from #222 */
             overflow: hidden;
             position: relative;
-            margin-bottom: 12px
+            margin-bottom: 12px;
+            border: 1px solid var(--border);
+            /* added border for light mode visibility */
+        }
+
+        .thumb-inner {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            user-select: none;
+            background: var(--bg2) !important;
+            color: var(--t2);
+        }
+
+        .thumb-inner svg {
+            width: 70%;
+            height: 70%;
+            object-fit: contain;
+        }
+
+        .grid.list-view .thumb-inner svg {
+            width: 80%;
+            height: 80%;
         }
 
         .thumb-box img {
@@ -381,7 +437,8 @@
             font-size: 15px;
             font-weight: 600;
             line-height: 1.4;
-            color: #fff;
+            color: var(--t1);
+            /* changed from #fff */
             margin-bottom: 4px;
             display: -webkit-box;
             -webkit-line-clamp: 2;
@@ -392,7 +449,8 @@
 
         .fmeta {
             font-size: 13px;
-            color: #aaa;
+            color: var(--t2);
+            /* changed from #aaa */
             line-height: 1.2
         }
 
@@ -403,15 +461,90 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #aaa;
+            color: var(--t2);
+            /* changed from #aaa */
             font-size: 20px;
             border-radius: 50%;
             transition: background 0.2s
         }
 
         .card-menu:hover {
-            background: rgba(255, 255, 255, 0.1);
-            color: #fff
+            background: var(--bg3);
+            /* changed from rgba white */
+            color: var(--t1)
+        }
+
+        /* === 列表视图样式 === */
+        .grid.list-view {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .grid.list-view .item {
+            flex-direction: row;
+            align-items: center;
+            background: var(--bg1);
+            padding: 8px 16px;
+            border-radius: 8px;
+            gap: 16px;
+        }
+
+        :root[data-theme="light"] .grid.list-view .item {
+            border: 1px solid var(--border);
+        }
+
+        .grid.list-view .item:hover {
+            background: var(--bg2);
+        }
+
+        .grid.list-view .thumb-box {
+            width: 48px;
+            height: 48px;
+            margin-bottom: 0;
+            aspect-ratio: auto;
+            border-radius: 6px;
+            flex-shrink: 0;
+        }
+
+        .grid.list-view .thumb-inner {
+            font-size: 24px !important;
+        }
+
+        .grid.list-view .size-tag {
+            display: none;
+        }
+
+        .grid.list-view .card-body {
+            padding: 0;
+            flex: 1;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .grid.list-view .card-avatar {
+            display: none;
+        }
+
+        .grid.list-view .card-text {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+        }
+
+        .grid.list-view .fname {
+            margin-bottom: 0;
+            -webkit-line-clamp: 1;
+            flex: 1;
+        }
+
+        .grid.list-view .fmeta {
+            display: none;
+        }
+
+        .grid.list-view .card-menu {
+            margin-left: 12px;
         }
 
         /* 选中状态 */
@@ -546,6 +679,49 @@
             background: rgba(248, 113, 113, .1)
         }
 
+        /* === 浮动返回按钮 (照顾触摸屏) === */
+        .float-back {
+            position: fixed;
+            bottom: 24px;
+            left: 24px;
+            z-index: 250;
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            box-shadow: 0 8px 24px var(--glow);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            transition: all 0.2s cubic-bezier(.4, 0, .2, 1);
+            cursor: pointer;
+        }
+
+        .float-back:active {
+            transform: scale(0.9);
+            box-shadow: 0 4px 12px var(--glow);
+        }
+
+        .float-back.show {
+            display: flex;
+            animation: bounceIn .4s cubic-bezier(.17, .67, .83, .67);
+        }
+
+        @keyframes bounceIn {
+            from {
+                opacity: 0;
+                transform: scale(0.3) translateY(40px);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
         /* === 上传进度 === */
         .up-panel {
             position: fixed;
@@ -623,8 +799,9 @@
             position: fixed;
             inset: 0;
             z-index: 300;
-            background: #0f0f0f;
-            overflow: hidden
+            background: var(--bg0);
+            overflow: hidden;
+            transition: background 0.3s;
         }
 
         .yt.show {
@@ -647,7 +824,45 @@
             flex-shrink: 0;
             border-radius: 12px;
             overflow: hidden;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5)
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            position: relative;
+            /* 为浮动按钮提供定位参考 */
+        }
+
+        .yt-v-tools {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            z-index: 320;
+            display: flex;
+            gap: 8px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .yt-video:hover .yt-v-tools {
+            opacity: 1;
+        }
+
+        .yt-v-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.5);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            backdrop-filter: blur(8px);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .yt-v-btn:hover {
+            background: rgba(0, 0, 0, 0.8);
+            transform: scale(1.1);
         }
 
         .yt-video video {
@@ -666,13 +881,40 @@
             font-size: 20px;
             font-weight: 700;
             line-height: 1.4;
-            color: #fff;
-            margin-bottom: 8px
+            color: var(--t1);
+            margin-bottom: 8px;
+            flex: 1
+        }
+
+        .yt-header-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .icon-btn-sm {
+            width: 32px;
+            height: 32px;
+            border-radius: var(--rs);
+            border: 1px solid var(--border);
+            background: var(--bg2);
+            color: var(--t2);
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all var(--tr);
+            flex-shrink: 0;
+        }
+
+        .icon-btn-sm:hover {
+            background: var(--bg3);
+            color: var(--t1);
         }
 
         .yt-info .yt-sub {
             font-size: 14px;
-            color: #aaa
+            color: var(--t2)
         }
 
         .yt-close {
@@ -694,9 +936,19 @@
             transition: all .2s
         }
 
+        :root[data-theme="light"] .yt-close {
+            background: rgba(255, 255, 255, .8);
+            color: #000;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
         .yt-close:hover {
             background: rgba(255, 255, 255, .1);
             transform: scale(1.1)
+        }
+
+        :root[data-theme="light"] .yt-close:hover {
+            background: #fff;
         }
 
         /* 侧边栏播放列表（完全参照图示） */
@@ -713,7 +965,7 @@
             padding-bottom: 16px;
             font-size: 16px;
             font-weight: 700;
-            color: #fff
+            color: var(--t1)
         }
 
         .pl {
@@ -732,18 +984,18 @@
         }
 
         .pl-i:hover {
-            background: rgba(255, 255, 255, .1)
+            background: var(--bg3)
         }
 
         .pl-i.act {
-            background: rgba(255, 255, 255, 0.15)
+            background: var(--bg4)
         }
 
         .pl-i .pl-thumb {
             width: 160px;
             height: 90px;
             border-radius: 8px;
-            background: #222;
+            background: var(--bg2);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -765,7 +1017,7 @@
             font-size: 14px;
             font-weight: 500;
             line-height: 1.4;
-            color: #f1f1f1;
+            color: var(--t1);
             display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
@@ -775,16 +1027,39 @@
 
         .pl-i .pl-m {
             font-size: 12px;
-            color: #aaa
+            color: var(--t2)
         }
 
         /* === 大厂级图片轮播灯箱 === */
+        .yt.full-win {
+            z-index: 999;
+        }
+
+        .yt.full-win .yt-side {
+            display: none;
+        }
+
+        .yt.full-win .yt-body {
+            padding: 0;
+        }
+
+        .yt.full-win .yt-video {
+            height: 100vh;
+            max-height: none;
+            border-radius: 0;
+        }
+
+        .yt.full-win .yt-info {
+            display: none;
+        }
+
         .lb {
             display: none;
             position: fixed;
             inset: 0;
             z-index: 400;
-            background: rgba(0, 0, 0, .96)
+            background: var(--bg0);
+            transition: background 0.3s;
         }
 
         .lb.show {
@@ -804,21 +1079,21 @@
         .lb-top .lb-title {
             font-size: 14px;
             font-weight: 500;
-            color: var(--t2)
+            color: var(--t1)
         }
 
         .lb-top .lb-cnt {
             font-size: 13px;
-            color: var(--t3)
+            color: var(--t2)
         }
 
         .lb-top .lb-x {
             width: 40px;
             height: 40px;
             border-radius: 50%;
-            background: rgba(255, 255, 255, .06);
+            background: var(--bg2);
             border: none;
-            color: #fff;
+            color: var(--t1);
             font-size: 20px;
             transition: all var(--tr);
             display: flex;
@@ -827,7 +1102,7 @@
         }
 
         .lb-top .lb-x:hover {
-            background: rgba(255, 255, 255, .12)
+            background: var(--bg3)
         }
 
         /* 主图区 */
@@ -862,9 +1137,9 @@
             width: 52px;
             height: 52px;
             border-radius: 50%;
-            background: rgba(255, 255, 255, .06);
+            background: var(--bg2);
             border: none;
-            color: #fff;
+            color: var(--t1);
             font-size: 26px;
             backdrop-filter: blur(8px);
             transition: all var(--tr);
@@ -874,7 +1149,7 @@
         }
 
         .lb-arrow:hover {
-            background: rgba(255, 255, 255, .14);
+            background: var(--bg3);
             transform: translateY(-50%) scale(1.05)
         }
 
@@ -923,7 +1198,98 @@
             object-fit: cover
         }
 
-        /* === 新建文件夹 === */
+        /* === 灯箱控制条 (底部固定) === */
+        .lb-bar {
+            flex-shrink: 0;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(10px);
+            z-index: 402;
+            width: 100%;
+            position: relative;
+            bottom: auto;
+            left: auto;
+            transform: none;
+            border-radius: 0;
+            border: none;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .lb-bar button {
+            background: transparent;
+            border: none;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 20px;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .lb-bar button:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+            transform: scale(1.1);
+        }
+
+        .lb-bar button.active {
+            color: var(--accent);
+            background: rgba(124, 106, 255, 0.2);
+        }
+
+        .lb-bar .sep {
+            width: 1px;
+            height: 24px;
+            background: rgba(255, 255, 255, 0.2);
+            margin: 0 4px;
+        }
+
+        /* 隐藏原始缩略图条 (全屏模式或幻灯片模式下可选，这里先保留，只微调位置) */
+        .lb.show .lb-strip {
+            display: none;
+        }
+
+        /* 左右箭头 */
+        .lb-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: #fff;
+            font-size: 32px;
+            cursor: pointer;
+            z-index: 401;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .lb-arrow:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .lb-arrow.prev {
+            left: 20px;
+        }
+
+        .lb-arrow.next {
+            right: 20px;
+        }
+
         .mdl-ov {
             display: none;
             position: fixed;
@@ -1040,6 +1406,8 @@
                 <span></span>
                 <p id="ipText">192.168.x.x</p>
             </a>
+            <button class="icon-btn" onclick="toggleTheme()" title="切换主题" id="themeBtn">🌓</button>
+            <button class="icon-btn" onclick="toggleView()" title="切换布局" id="viewBtn">🔲</button>
             <button class="icon-btn" onclick="showMkdir()" title="新建文件夹">📁</button>
             <button class="icon-btn" id="upBtn" onclick="toggleUpMenu()" title="上传">⬆</button>
             <div class="upload-menu" id="upMenu">
@@ -1073,11 +1441,15 @@
     <input type="file" id="fi" multiple hidden>
     <input type="file" id="fdi" webkitdirectory hidden>
 
+    <button class="float-back" id="floatBack" onclick="goUp()" title="返回上级">🏠</button>
+
     <!-- 选中操作浮条 -->
     <div class="action-bar" id="abar">
         <span class="cnt" id="selCnt"></span>
         <button class="ab-btn" onclick="clearSel()">取消选择</button>
-        <button class="ab-btn del" onclick="delSel()">🗑 删除</button>
+        <button class="ab-btn" onclick="shareSel()" style="margin-right:12px">📤 分享</button>
+        <button class="ab-btn" onclick="dlSel()" style="border-color: var(--accent); color: var(--accent);">📥
+            下载</button>
     </div>
 
     <!-- 上传进度 -->
@@ -1090,9 +1462,18 @@
     <div class="yt" id="yt">
         <button class="yt-close" onclick="closeVP()">✕</button>
         <div class="yt-body">
-            <div class="yt-video"><video id="vid" controls></video></div>
+            <div class="yt-video">
+                <video id="vid" controls></video>
+                <div class="yt-v-tools">
+                    <button class="yt-v-btn" onclick="rotateVid()" title="旋转视频 (快捷键: R)">↻</button>
+                    <button class="yt-v-btn" onclick="toggleFullWin()" title="网页全屏 (快捷键: F)">⛶</button>
+                    <button class="yt-v-btn" onclick="dlVid()" title="下载视频 (快捷键: D)">📥</button>
+                </div>
+            </div>
             <div class="yt-info">
-                <h2 id="vtitle"></h2>
+                <div class="yt-header-row">
+                    <h2 id="vtitle"></h2>
+                </div>
                 <div class="yt-sub" id="vsub"></div>
             </div>
         </div>
@@ -1103,18 +1484,48 @@
     </div>
 
     <!-- 图片灯箱 -->
+    <!-- 图片灯箱 -->
     <div class="lb" id="lb">
         <div class="lb-top">
             <span class="lb-title" id="lbTitle"></span>
             <span class="lb-cnt" id="lbCnt"></span>
             <button class="lb-x" onclick="closeLB()">✕</button>
         </div>
+
         <div class="lb-stage">
-            <button class="lb-arrow prev" onclick="lbGo(-1)">‹</button>
-            <img id="lbImg" src="" alt="">
-            <button class="lb-arrow next" onclick="lbGo(1)">›</button>
+            <button class="lb-arrow prev" onclick="lbStop();lbGo(-1)">‹</button>
+            <div class="lb-img-box">
+                <img id="lbImg" src="" alt="" ondblclick="lbToggleFull();lbPlay(true)">
+            </div>
+            <button class="lb-arrow next" onclick="lbStop();lbGo(1)">›</button>
         </div>
-        <div class="lb-strip" id="lbStrip"></div>
+
+        <div class="lb-bar">
+            <button onclick="lbStop();lbGo(-1)" title="上一张 (←)">⏮</button>
+            <button id="lbPlayBtn" onclick="lbTogglePlay()" title="自动播放 (空格)">▶</button>
+            <button id="lbTimeBtn" onclick="lbCycleTime()" title="切换间隔"
+                style="font-size:14px;font-weight:600;width:50px">5s</button>
+            <div class="sep"></div>
+            <button onclick="lbRot(90)" title="旋转 (R)">↻</button>
+            <button onclick="lbToggleFull()" title="全屏 (Enter/F)">⛶</button>
+            <div class="sep"></div>
+            <button onclick="closeLB()" title="退出 (Esc)">✕</button>
+        </div>
+
+        <!-- 缩略图条 (已隐藏，代码保留以免JS报错) -->
+        <div class="lb-strip" id="lbStrip" style="display:none"></div>
+    </div>
+
+    <!-- 分享模态框 -->
+    <div class="mdl-ov" id="shareM">
+        <div class="mdl" style="text-align:center">
+            <h3>📱 扫码分享</h3>
+            <div id="shareQr" style="margin:20px auto;width:200px;height:200px;background:#eee"></div>
+            <input type="text" id="shareUrl" readonly onclick="this.select()" style="margin-top:10px;text-align:center">
+            <div class="macts">
+                <button class="mbtn" onclick="$('#shareM').classList.remove('show')">关闭</button>
+            </div>
+        </div>
     </div>
 
     <!-- 新建文件夹 -->
@@ -1132,6 +1543,7 @@
     <script>
         const $ = s => document.querySelector(s), $$ = s => document.querySelectorAll(s);
         let cur = '', files = [], sel = new Set(), imgs = [], vids = [], lbi = 0;
+        let lbTimer = null, lbInterval = 5000, lbR = 0; // 灯箱状态变量
         const imgE = /\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i, vidE = /\.(mp4|webm|mkv|avi|mov|flv)$/i;
         const fileUrl = (name) => { const fp = cur ? cur + '/' + name : name; return '/files/' + encodeURIComponent(fp).replace(/%2F/g, '/'); };
 
@@ -1165,7 +1577,10 @@
 
         // === 导航 ===
         function renderNav() {
-            $('#backBtn').classList.toggle('hidden', !cur);
+            const isRoot = !cur;
+            $('#backBtn').classList.toggle('hidden', isRoot);
+            $('#floatBack').classList.toggle('show', !isRoot);
+
             let h = '<a href="#" data-p="">根目录</a>';
             if (cur) {
                 const ps = cur.split('/').filter(Boolean); let p = '';
@@ -1188,23 +1603,25 @@
         // === 文件网格 ===
         function renderGrid() {
             const g = $('#grid');
+            if (viewMode === 'list') g.classList.add('list-view');
+            else g.classList.remove('list-view');
+
             if (!files.length) { g.innerHTML = '<div class="empty"><span>📭</span><p>空文件夹</p></div>'; return; }
             g.innerHTML = files.map(f => {
+                const slug = ico(f.name, f.isDir);
                 let th = ''; const u = fileUrl(f.name);
-                if (f.isDir) th = '<span>📁</span>';
+                if (f.isDir) th = getIcon(slug);
                 else if (imgE.test(f.name)) th = `<img src="${u}" loading="lazy" alt="">`;
-                else if (vidE.test(f.name)) th = `<img class="v-thumb" data-u="${u}" style="display:none"><span>🎬</span>`;
-                else th = `<span>${ico(f.name)}</span>`;
+                else if (vidE.test(f.name)) th = `<img class="v-thumb" data-u="${u}" style="display:none">${getIcon(slug)}`;
+                else th = getIcon(slug);
 
-                return `<div class="item" data-n="${esc(f.name)}" onclick="click_(event,'${esc(f.name)}',${f.isDir})">
+                return `<div class="item${sel.has(f.name) ? ' sel' : ''}" data-n="${esc(f.name)}" onclick="click_(event,'${esc(f.name)}',${f.isDir})">
                     <div class="thumb-box">
-                        <div class="thumb-inner" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:48px;background:#1a1a1a">
-                            ${th}
-                        </div>
+                        <div class="thumb-inner">${th}</div>
                         ${f.isDir ? '' : `<div class="size-tag">${fmtSz(f.size)}</div>`}
                     </div>
                     <div class="card-body">
-                        <div class="card-avatar">${f.isDir ? '📁' : (vidE.test(f.name) ? '🎬' : (imgE.test(f.name) ? '🖼️' : '📄'))}</div>
+                        <div class="card-avatar">${getIcon(slug)}</div>
                         <div class="card-text">
                             <div class="fname">${esc(f.name)}</div>
                             <div class="fmeta">FireCloud · ${f.isDir ? '文件夹' : '文件'}</div>
@@ -1232,13 +1649,40 @@
                 };
             });
         }
-        function ico(n) {
+        // === 图标系统 (通用风格) ===
+        const ICONS = {
+            folder: `<svg viewBox="0 0 24 24" fill="none"><path d="M10 4H4C2.9 4 2.01 4.9 2.01 6L2 18C2 19.1 2.9 20 4 20H20C21.1 20 22 19.1 22 18V8C22 6.9 21.1 6 20 6H12L10 4Z" fill="#FFCA28"/></svg>`,
+            word: `<svg viewBox="0 0 24 24" fill="none"><rect x="4" y="2" width="16" height="20" rx="2" fill="#2B579A"/><path d="M8 8V16M11 8L13 16L15 8" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+            excel: `<svg viewBox="0 0 24 24" fill="none"><rect x="4" y="2" width="16" height="20" rx="2" fill="#217346"/><path d="M9 9L15 15M15 9L9 15" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+            ppt: `<svg viewBox="0 0 24 24" fill="none"><rect x="4" y="2" width="16" height="20" rx="2" fill="#D24726"/><path d="M12 7V17M12 7H15C16.1 7 17 7.9 17 9C17 10.1 16.1 11 15 11H12" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+            pdf: `<svg viewBox="0 0 24 24" fill="none"><rect x="4" y="2" width="16" height="20" rx="2" fill="#F44336"/><path d="M8 8H12C14.2 8 16 9.8 16 12C16 14.2 14.2 16 12 16H8V8Z" stroke="white" stroke-width="2"/></svg>`,
+            zip: `<svg viewBox="0 0 24 24" fill="none"><rect x="4" y="2" width="16" height="20" rx="2" fill="#607D8B"/><path d="M11 2V4M13 4V6M11 6V8M13 8V10M11 10V12M13 12V14M11 14V16" stroke="#FFD54F" stroke-width="2"/></svg>`,
+            video: `<svg viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="16" rx="2" fill="#673AB7"/><circle cx="12" cy="12" r="3" fill="white"/></svg>`,
+            audio: `<svg viewBox="0 0 24 24" fill="none"><rect x="4" y="2" width="16" height="20" rx="2" fill="#009688"/><path d="M9 17V7L16 5V15" stroke="white" stroke-width="2" stroke-linejoin="round"/></svg>`,
+            image: `<svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" fill="#03A9F4"/><path d="M3 14L8 9L21 19V21H3V14Z" fill="white" opacity="0.6"/><circle cx="8" cy="8" r="2" fill="white"/></svg>`,
+            text: `<svg viewBox="0 0 24 24" fill="none"><rect x="4" y="2" width="16" height="20" rx="2" fill="#9E9E9E"/><path d="M8 7H16M8 11H16M8 15H13" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>`,
+            exe: `<svg viewBox="0 0 24 24" fill="none"><rect x="4" y="2" width="16" height="20" rx="2" fill="#455A64"/><path d="M8 8L16 16M16 8L8 16" stroke="#81C784" stroke-width="2"/></svg>`,
+            file: `<svg viewBox="0 0 24 24" fill="none"><rect x="4" y="2" width="16" height="20" rx="2" fill="#BDBDBD"/><path d="M14 2V8H20" stroke="white" stroke-width="2" stroke-linejoin="round"/></svg>`
+        };
+
+        function getIcon(slug) {
+            return ICONS[slug] || ICONS.file;
+        }
+
+        function ico(n, isDir) {
+            if (isDir) return 'folder';
             n = n.toLowerCase();
-            if (/\.(mp3|wav|ogg|flac)$/.test(n)) return '🎵'; if (/\.pdf$/.test(n)) return '📕';
-            if (/\.(doc|docx)$/.test(n)) return '📘'; if (/\.(xls|xlsx)$/.test(n)) return '📗';
-            if (/\.(ppt|pptx)$/.test(n)) return '📙'; if (/\.(zip|rar|7z)$/.test(n)) return '📦';
-            if (/\.(html|htm)$/.test(n)) return '🌐'; if (/\.(js|go|py|java|c|cpp)$/.test(n)) return '💻';
-            return '📄';
+            if (/\.(mp4|webm|mkv|avi|mov|flv|wmv|ts)$/.test(n)) return 'video';
+            if (/\.(mp3|wav|ogg|flac|m4a|aac)$/.test(n)) return 'audio';
+            if (/\.(jpg|jpeg|png|gif|webp|bmp|svg|ico)$/.test(n)) return 'image';
+            if (/\.(zip|rar|7z|tar|gz|bz2)$/.test(n)) return 'zip';
+            if (/\.(doc|docx)$/.test(n)) return 'word';
+            if (/\.(xls|xlsx|csv)$/.test(n)) return 'excel';
+            if (/\.(ppt|pptx)$/.test(n)) return 'ppt';
+            if (/\.pdf$/.test(n)) return 'pdf';
+            if (/\.(txt|md|log|ini|conf|js|ts|json|html|htm|css|scss|less|go|py|java|c|cpp|h|cs|sh|bat)$/.test(n)) return 'text';
+            if (/\.(exe|msi|apk|dmg)$/.test(n)) return 'exe';
+            return 'file';
         }
 
         function click_(e, name, isDir) {
@@ -1249,17 +1693,206 @@
             else window.open(fileUrl(name), '_blank');
         }
 
-        // === 选择 ===
+        // === 图片灯箱逻辑 ===
+        function openLB() {
+            $('#lb').classList.add('show');
+            lbR = 0; lbStop(); updLbUV();
+            document.body.style.overflow = 'hidden';
+            renderStrip();
+        }
+
+        function closeLB() {
+            $('#lb').classList.remove('show');
+            lbStop();
+            if (document.fullscreenElement) document.exitFullscreen();
+            document.body.style.overflow = '';
+        }
+
+        // 切换图片
+        function lbGo(d) {
+            lbi = (lbi + d + imgs.length) % imgs.length;
+            lbR = 0; // 切换重置旋转
+            updLbUV();
+        }
+
+        // 更新界面
+        function updLbUV() {
+            const f = imgs[lbi];
+            $('#lbTitle').innerText = f.name;
+            $('#lbCnt').innerText = `${lbi + 1} / ${imgs.length}`;
+            const img = $('#lbImg');
+
+            // 预加载/动画
+            img.style.opacity = 0;
+            img.style.transform = `scale(0.95) rotate(0deg)`;
+
+            setTimeout(() => {
+                img.src = fileUrl(f.name);
+                img.onload = () => {
+                    img.style.opacity = 1;
+                    img.style.transform = `scale(1) rotate(${lbR}deg)`;
+                };
+            }, 100);
+
+            // 更新缩略图高亮
+            $$('.lb-th').forEach((el, i) => el.classList.toggle('act', i === lbi));
+            // 滚动缩略图条
+            const th = $$('.lb-th')[lbi];
+            if (th) th.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        }
+
+        // 旋转
+        function lbRot(deg) {
+            lbR = (lbR + deg) % 360;
+            $('#lbImg').style.transform = `scale(1) rotate(${lbR}deg)`;
+        }
+
+        // 自动播放
+        function lbPlay(force) {
+            if (lbTimer && !force) return;
+            if (force) lbStop();
+            $('#lbPlayBtn').innerText = '⏸';
+            $('#lbPlayBtn').classList.add('active');
+            lbTimer = setInterval(() => lbGo(1), lbInterval);
+        }
+
+        function lbStop() {
+            if (lbTimer) clearInterval(lbTimer);
+            lbTimer = null;
+            $('#lbPlayBtn').innerText = '▶';
+            $('#lbPlayBtn').classList.remove('active');
+        }
+
+        function lbTogglePlay() {
+            lbTimer ? lbStop() : lbPlay();
+        }
+
+        function lbCycleTime() {
+            // 5s -> 30s -> 60s -> 5s
+            if (lbInterval === 5000) lbInterval = 30000;
+            else if (lbInterval === 30000) lbInterval = 60000;
+            else lbInterval = 5000;
+
+            $('#lbTimeBtn').innerText = lbInterval === 60000 ? '60s' : (lbInterval / 1000 + 's');
+
+            // 如果正在播放，重置计时器
+            if (lbTimer) { lbStop(); lbPlay(); }
+        }
+
+        function lbToggleFull() {
+            if (!document.fullscreenElement) {
+                $('#lb').requestFullscreen().catch(err => console.log(err));
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        // 渲染缩略图条 (按需调用)
+        function renderStrip() {
+            $('#lbStrip').innerHTML = imgs.map((f, i) =>
+                `<div class="lb-th${i === lbi ? ' act' : ''}" onclick="lbi=${i};lbStop();updLbUV()">
+                    <img src="${fileUrl(f.name)}" loading="lazy">
+                </div>`
+            ).join('');
+        }
+
+        // === YouTube 视频播放器 ===
+        let vRot = 0;
+        function openVP(name) {
+            const v = $('#vid'); v.src = fileUrl(name); $('#vtitle').textContent = name;
+            vRot = 0; v.style.transform = ''; // 重置旋转
+            const idx = vids.findIndex(f => f.name === name);
+            $('#vsub').textContent = `${vids.length} 个视频 · 正在播放 #${idx + 1}`;
+            $('#plCnt').textContent = `播放列表`;
+            $('#yt').classList.add('show'); document.body.style.overflow = 'hidden';
+            // 渲染播放列表
+            $('#pl').innerHTML = vids.map((f, i) => `<div class="pl-i${f.name === name ? ' act' : ''}" onclick="swVid('${esc(f.name)}')">
+<div class="pl-thumb">
+    <img class="v-thumb" data-u="${fileUrl(f.name)}" style="display:none;width:100%;height:100%;object-fit:contain">
+    <div class="thumb-inner" style="font-size:32px">${getIcon('video')}</div>
+</div>
+<div class="pl-t-box">
+    <div class="pl-t">${esc(f.name)}</div>
+    <div class="pl-m">${fmtSz(f.size)}</div>
+</div></div>`).join('');
+            v.play().catch(() => { });
+            v.onended = () => { if (idx < vids.length - 1) swVid(vids[idx + 1].name); };
+
+            // 立即触发截帧
+            genVidThumbs();
+        }
+        function swVid(name) {
+            const v = $('#vid'); v.src = fileUrl(name); $('#vtitle').textContent = name;
+            const idx = vids.findIndex(f => f.name === name);
+            vRot = 0; v.style.transform = ''; // 重置旋转
+            $('#vsub').textContent = `${vids.length} 个视频 · 正在播放 #${idx + 1}`;
+            $$('.pl-i').forEach((el, i) => el.classList.toggle('act', i === idx));
+            v.play().catch(() => { });
+            v.onended = () => { if (idx < vids.length - 1) swVid(vids[idx + 1].name); };
+        }
+        function closeVP() { $('#vid').pause(); $('#vid').removeAttribute('src'); $('#vid').load(); $('#yt').classList.remove('show'); $('#yt').classList.remove('full-win'); document.body.style.overflow = ''; }
+
+        function rotateVid() {
+            vRot = (vRot + 90) % 360;
+            const v = $('#vid');
+            v.style.transition = 'transform 0.3s ease';
+            v.style.transform = `rotate(${vRot}deg)`;
+        }
+        function dlVid() {
+            const name = $('#vtitle').textContent;
+            const a = document.createElement('a');
+            a.href = fileUrl(name);
+            a.download = name;
+            a.click();
+        }
+        function toggleFullWin() {
+            $('#yt').classList.toggle('full-win');
+        }
+
+        // === 选择功能 ===
         function togSel(n) {
             sel.has(n) ? sel.delete(n) : sel.add(n);
             $$('.item').forEach(el => el.classList.toggle('sel', sel.has(el.dataset.n))); updAbar();
         }
         function clearSel() { sel.clear(); $$('.item').forEach(el => el.classList.remove('sel')); updAbar(); }
         function updAbar() { const a = $('#abar'); if (sel.size) { a.classList.add('show'); $('#selCnt').textContent = `已选 ${sel.size} 项`; } else a.classList.remove('show'); }
-        async function delSel() {
-            if (!confirm(`确定删除 ${sel.size} 个项目？`)) return;
-            for (const n of sel) { await fetch(`/api/delete?path=${encodeURIComponent(cur ? cur + '/' + n : n)}`, { method: 'DELETE' }); }
-            load();
+        async function shareSel() {
+            try {
+                if (sel.size !== 1) { alert('请一次选择一个文件进行分享'); return; }
+                const n = [...sel][0];
+                const f = files.find(item => item.name === n);
+                if (!f) return;
+
+                const path = cur ? cur + '/' + n : n;
+                const r = await fetch(`/api/share?path=${encodeURIComponent(path)}`);
+                if (!r.ok) throw new Error(`HTTP ${r.status}: ` + await r.text());
+                const d = await r.json();
+
+                $('#shareM').classList.add('show');
+                $('#shareQr').innerHTML = `<img src="data:image/png;base64,${d.qr}" style="width:100%;height:100%">`;
+                $('#shareUrl').value = d.url;
+                clearSel();
+            } catch (e) {
+                console.error('Share Error:', e);
+                alert('分享失败，请检查控制台或后端日志。\n错误: ' + e.message);
+            }
+        }
+
+        async function dlSel() {
+            for (const n of sel) {
+                const f = files.find(item => item.name === n);
+                if (f && !f.isDir) {
+                    const a = document.createElement('a');
+                    a.href = fileUrl(n);
+                    a.download = n;
+                    a.style.display = 'none';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    await new Promise(r => setTimeout(r, 200));
+                }
+            }
+            clearSel();
         }
 
         // === 上传菜单 ===
@@ -1321,65 +1954,17 @@
             $('#mkdirM').classList.remove('show'); load();
         }
 
-        // === YouTube 视频播放器 ===
-        function openVP(name) {
-            const v = $('#vid'); v.src = fileUrl(name); $('#vtitle').textContent = name;
-            const idx = vids.findIndex(f => f.name === name);
-            $('#vsub').textContent = `${vids.length} 个视频 · 正在播放 #${idx + 1}`;
-            $('#plCnt').textContent = `播放列表`;
-            $('#yt').classList.add('show'); document.body.style.overflow = 'hidden';
-            // 渲染播放列表
-            $('#pl').innerHTML = vids.map((f, i) => `<div class="pl-i${f.name === name ? ' act' : ''}" onclick="swVid('${esc(f.name)}')">
-    <div class="pl-thumb">
-        <img class="v-thumb" data-u="${fileUrl(f.name)}" style="display:none;width:100%;height:100%;object-fit:contain">
-        <span>🎬</span>
-    </div>
-    <div class="pl-t-box">
-        <div class="pl-t">${esc(f.name)}</div>
-        <div class="pl-m">${fmtSz(f.size)}</div>
-    </div></div>`).join('');
-            v.play().catch(() => { });
-            v.onended = () => { if (idx < vids.length - 1) swVid(vids[idx + 1].name); };
-
-            // 立即触发截帧
-            genVidThumbs();
-        }
-        function swVid(name) {
-            const v = $('#vid'); v.src = fileUrl(name); $('#vtitle').textContent = name;
-            const idx = vids.findIndex(f => f.name === name);
-            $('#vsub').textContent = `${vids.length} 个视频 · 正在播放 #${idx + 1}`;
-            $$('.pl-i').forEach((el, i) => el.classList.toggle('act', i === idx));
-            v.play().catch(() => { });
-            v.onended = () => { if (idx < vids.length - 1) swVid(vids[idx + 1].name); };
-        }
-        function closeVP() { $('#vid').pause(); $('#vid').removeAttribute('src'); $('#vid').load(); $('#yt').classList.remove('show'); document.body.style.overflow = ''; }
-
-        // === 图片灯箱 ===
-        function openLB() {
-            $('#lb').classList.add('show'); document.body.style.overflow = 'hidden';
-            // 渲染缩略图条
-            $('#lbStrip').innerHTML = imgs.map((f, i) => `<div class="lb-th${i === lbi ? ' act' : ''}" onclick="lbJump(${i})"><img src="${fileUrl(f.name)}" alt=""></div>`).join('');
-            updLB(false);
-        }
-        function closeLB() { $('#lb').classList.remove('show'); document.body.style.overflow = ''; }
-        function lbGo(d) { lbi = (lbi + d + imgs.length) % imgs.length; updLB(true); }
-        function lbJump(i) { lbi = i; updLB(true); }
-        function updLB(animate) {
-            const f = imgs[lbi], img = $('#lbImg');
-            if (animate) { img.classList.add('fade-out'); setTimeout(() => { img.src = fileUrl(f.name); img.classList.remove('fade-out'); }, 150); }
-            else { img.src = fileUrl(f.name); }
-            $('#lbTitle').textContent = f.name;
-            $('#lbCnt').textContent = `${lbi + 1} / ${imgs.length}`;
-            $$('.lb-th').forEach((el, i) => el.classList.toggle('act', i === lbi));
-            // 滚动缩略图条
-            const strip = $('#lbStrip'), th = strip.children[lbi];
-            if (th) th.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-        }
 
         // === 键盘 ===
         document.addEventListener('keydown', e => {
             if ($('#lb').classList.contains('show')) { if (e.key === 'ArrowLeft') lbGo(-1); if (e.key === 'ArrowRight') lbGo(1); if (e.key === 'Escape') closeLB(); }
-            if ($('#yt').classList.contains('show') && e.key === 'Escape') closeVP();
+            if ($('#yt').classList.contains('show')) {
+                const k = e.key.toLowerCase();
+                if (k === 'r') rotateVid();
+                if (k === 'f') toggleFullWin();
+                if (k === 'd') dlVid();
+                if (e.key === 'Escape') closeVP();
+            }
             if ($('#mkdirM').classList.contains('show') && e.key === 'Enter') doMkdir();
             if (e.key === 'Escape') { $('#mkdirM').classList.remove('show'); clearSel(); }
         });
@@ -1387,6 +1972,46 @@
         // === 工具 ===
         function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
         function fmtSz(b) { if (!b) return '0 B'; const k = 1024, u = ['B', 'KB', 'MB', 'GB', 'TB'], i = Math.floor(Math.log(b) / Math.log(k)); return (b / Math.pow(k, i)).toFixed(i ? 1 : 0) + ' ' + u[i]; }
+
+        // === 主题切换 ===
+        function initTheme() {
+            const t = localStorage.getItem('theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', t);
+            updateThemeBtn(t);
+        }
+        function toggleTheme() {
+            const cur = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', cur);
+            localStorage.setItem('theme', cur);
+            updateThemeBtn(cur);
+        }
+        function updateThemeBtn(t) {
+            const btn = document.getElementById('themeBtn');
+            if (btn) btn.innerHTML = t === 'light' ? '🌞' : '🌙';
+        }
+        initTheme();
+        // === 布局切换 ===
+        let viewMode = localStorage.getItem('viewMode') || 'card';
+        function initView() {
+            updateViewUI();
+        }
+        function toggleView() {
+            viewMode = viewMode === 'card' ? 'list' : 'card';
+            localStorage.setItem('viewMode', viewMode);
+            updateViewUI();
+        }
+        function updateViewUI() {
+            const g = $('#grid');
+            const btn = $('#viewBtn');
+            if (viewMode === 'list') {
+                g.classList.add('list-view');
+                btn.innerHTML = '☰';
+            } else {
+                g.classList.remove('list-view');
+                btn.innerHTML = '🔲';
+            }
+        }
+        initView();
     </script>
 </body>
 
