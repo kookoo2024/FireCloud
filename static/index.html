@@ -93,6 +93,7 @@
             font-weight: 700;
             background: linear-gradient(135deg, #ff6b6b, var(--accent), #38bdf8);
             -webkit-background-clip: text;
+            background-clip: text;
             -webkit-text-fill-color: transparent;
             margin-right: 8px;
             white-space: nowrap;
@@ -405,6 +406,7 @@
             margin-bottom: 4px;
             display: -webkit-box;
             -webkit-line-clamp: 2;
+            line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
             word-break: break-all
@@ -499,6 +501,7 @@
         .grid.list-view .fname {
             margin-bottom: 0;
             -webkit-line-clamp: 1;
+            line-clamp: 1;
             flex: 1;
         }
 
@@ -983,6 +986,7 @@
             color: var(--t1);
             display: -webkit-box;
             -webkit-line-clamp: 2;
+            line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
             margin-bottom: 4px
@@ -991,6 +995,85 @@
         .pl-i .pl-m {
             font-size: 12px;
             color: var(--t2)
+        }
+
+        /* === 视频书签/标注样式 === */
+        .yt-marks {
+            margin-top: 24px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .yt-marks-hd {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+
+        .yt-marks-hd span {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--t1);
+        }
+
+        .mark-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .mark-i {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all var(--tr);
+        }
+
+        .mark-i:hover {
+            background: var(--bg3);
+            border-color: var(--accent);
+            transform: translateX(4px);
+        }
+
+        .mark-t {
+            font-family: monospace;
+            font-size: 13px;
+            color: var(--accent);
+            font-weight: 700;
+            background: var(--glow);
+            padding: 2px 6px;
+            border-radius: 4px;
+            flex-shrink: 0;
+        }
+
+        .mark-l {
+            font-size: 14px;
+            color: var(--t1);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .mark-dot {
+            position: absolute;
+            bottom: -2px;
+            width: 8px;
+            height: 8px;
+            background: #ffeb3b;
+            border-radius: 50%;
+            transform: translateX(-50%);
+            pointer-events: none;
+            box-shadow: 0 0 10px rgba(255, 235, 59, 0.8);
+            z-index: 10;
         }
 
         /* === 大厂级图片轮播灯箱 === */
@@ -1023,11 +1106,14 @@
             z-index: 400;
             background: var(--bg0);
             transition: background 0.3s;
+            height: 100dvh;
+            /* 使用动态高度，适配移动端地址栏 */
         }
 
         .lb.show {
             display: flex;
-            flex-direction: column
+            flex-direction: column;
+            align-items: stretch;
         }
 
         /* 顶栏 */
@@ -1076,7 +1162,10 @@
             justify-content: center;
             position: relative;
             overflow: hidden;
-            min-height: 0
+            min-height: 0;
+            touch-action: none;
+            padding: 10px;
+            /* 增加边距，防止贴边 */
         }
 
         .lb-img-box {
@@ -1084,9 +1173,10 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 20px;
             border-radius: 12px;
             transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            max-width: 100%;
+            max-height: 100%;
         }
 
         /* 强化版自动播放绿色发光特效（呼吸感） */
@@ -1113,9 +1203,11 @@
         }
 
         .lb-stage img {
-            max-width: 88vw;
-            max-height: calc(100vh - 160px);
+            max-width: 100%;
+            max-height: 100%;
             object-fit: contain;
+            display: block;
+            /* 消除底边空隙 */
             border-radius: 8px;
             transition: opacity .3s, transform .3s, box-shadow 0.5s;
             user-select: none;
@@ -1134,15 +1226,16 @@
             width: 52px;
             height: 52px;
             border-radius: 50%;
-            background: var(--bg2);
+            background: rgba(0, 0, 0, 0.4);
             border: none;
-            color: var(--t1);
+            color: #fff;
             font-size: 26px;
             backdrop-filter: blur(8px);
             transition: all var(--tr);
             display: flex;
             align-items: center;
-            justify-content: center
+            justify-content: center;
+            z-index: 410;
         }
 
         .lb-arrow:hover {
@@ -1387,6 +1480,40 @@
                 width: 48px;
                 height: 32px
             }
+
+            /* 移动端视频播放器适配 */
+            .yt {
+                flex-direction: column;
+                overflow-y: auto;
+            }
+
+            .yt-side {
+                width: 100%;
+                padding: 0 20px 40px 20px;
+                display: flex;
+                flex-direction: column;
+                flex-shrink: 0;
+                overflow-y: visible;
+            }
+
+            .yt-body {
+                flex: none;
+                width: 100%;
+                padding: 12px;
+            }
+
+            .yt-video {
+                max-height: 40vh;
+            }
+
+            .yt-v-tools {
+                opacity: 1;
+            }
+
+            .yt-marks {
+                margin-top: 16px;
+                padding-top: 16px;
+            }
         }
     </style>
 </head>
@@ -1453,8 +1580,9 @@
         <button class="yt-close" onclick="closeVP()">✕</button>
         <div class="yt-body">
             <div class="yt-video">
-                <video id="vid" controls></video>
+                <video id="vid" controls playsinline webkit-playsinline preload="auto"></video>
                 <div class="yt-v-tools">
+                    <button class="yt-v-btn" onclick="addMark()" title="添加知识点书签 (快捷键: M)">🔖</button>
                     <button class="yt-v-btn" onclick="rotateVid()" title="旋转视频 (快捷键: R)">↻</button>
                     <button class="yt-v-btn" onclick="toggleFullWin()" title="网页全屏 (快捷键: F)">⛶</button>
                     <button class="yt-v-btn" onclick="dlVid()" title="下载视频 (快捷键: D)">📥</button>
@@ -1470,6 +1598,13 @@
         <div class="yt-side">
             <div class="yt-side-hd">播放列表 <span id="plCnt"></span></div>
             <div class="pl" id="pl"></div>
+            <div class="yt-marks">
+                <div class="yt-marks-hd">
+                    <span>知识点索引 🔖</span>
+                    <button class="icon-btn-sm" onclick="addMark()" title="在当前时间打点">+</button>
+                </div>
+                <div class="mark-list" id="markList"></div>
+            </div>
         </div>
     </div>
 
@@ -1534,6 +1669,7 @@
         const $ = s => document.querySelector(s), $$ = s => document.querySelectorAll(s);
         let cur = '', files = [], sel = new Set(), imgs = [], vids = [], lbi = 0;
         let lbTimer = null, lbInterval = 5000, lbR = 0; // 灯箱状态变量
+        let markers = []; // 视频标注
         const imgE = /\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i, vidE = /\.(mp4|webm|mkv|avi|mov|flv)$/i;
         const fileUrl = (name) => { const fp = cur ? cur + '/' + name : name; return '/files/' + encodeURIComponent(fp).replace(/%2F/g, '/'); };
 
@@ -1623,21 +1759,52 @@
             genVidThumbs();
         }
 
-        // === 视频自动截帧 ===
-        function genVidThumbs() {
-            $$('.v-thumb').forEach(img => {
-                const video = document.createElement('video');
-                video.src = img.dataset.u;
-                video.preload = 'metadata'; video.muted = true; video.currentTime = 1;
-                video.onseeked = () => {
-                    const canvas = document.createElement('canvas');
-                    canvas.width = video.videoWidth; canvas.height = video.videoHeight;
-                    canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
-                    img.src = canvas.toDataURL('image/jpeg', 0.7);
-                    img.style.display = 'block';
-                    if (img.nextElementSibling) img.nextElementSibling.style.display = 'none';
-                };
-            });
+        // === 视频自动截帧 (串行优化，防止手机内存撑爆) ===
+        let thumbQueue = [];
+        let isProcessingThumb = false;
+
+        async function genVidThumbs() {
+            const imgs = $$('.v-thumb');
+            thumbQueue = Array.from(imgs).filter(img => !img.src || img.src === '');
+            processNextThumb();
+        }
+
+        async function processNextThumb() {
+            if (isProcessingThumb || thumbQueue.length === 0) return;
+            isProcessingThumb = true;
+
+            const img = thumbQueue.shift();
+            const video = document.createElement('video');
+            video.src = img.dataset.u;
+            video.preload = 'metadata';
+            video.muted = true;
+            video.playsInline = true;
+
+            try {
+                await new Promise((resolve, reject) => {
+                    video.onloadedmetadata = () => {
+                        video.currentTime = Math.min(video.duration * 0.1, 2);
+                    };
+                    video.onseeked = resolve;
+                    video.onerror = reject;
+                    setTimeout(reject, 3000); // 3秒超时，防止死锁
+                });
+
+                const canvas = document.createElement('canvas');
+                canvas.width = video.videoWidth / 2; // 缩小尺寸减少内存
+                canvas.height = video.videoHeight / 2;
+                canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+                img.src = canvas.toDataURL('image/jpeg', 0.6);
+                img.style.display = 'block';
+                if (img.nextElementSibling) img.nextElementSibling.style.display = 'none';
+            } catch (e) {
+                console.warn('截帧失败:', img.dataset.u);
+            } finally {
+                video.src = '';
+                video.load(); // 强制释放内存
+                isProcessingThumb = false;
+                processNextThumb(); // 处理下一个
+            }
         }
         // === 图标系统 (通用风格) ===
         const ICONS = {
@@ -1684,11 +1851,29 @@
         }
 
         // === 图片灯箱逻辑 ===
+        let touchX = 0, touchY = 0;
         function openLB() {
             $('#lb').classList.add('show');
             lbR = 0; lbStop(); updLbUV();
             document.body.style.overflow = 'hidden';
             renderStrip();
+
+            // 触摸增强支持
+            const lb = $('#lb');
+            lb.ontouchstart = e => {
+                touchX = e.touches[0].clientX;
+                touchY = e.touches[0].clientY;
+            };
+            lb.ontouchend = e => {
+                const diffX = e.changedTouches[0].clientX - touchX;
+                const diffY = e.changedTouches[0].clientY - touchY;
+
+                // 确保是水平滑动且位移足够大
+                if (Math.abs(diffX) > 60 && Math.abs(diffX) > Math.abs(diffY)) {
+                    lbStop();
+                    lbGo(diffX > 0 ? -1 : 1);
+                }
+            };
         }
 
         function closeLB() {
@@ -1812,8 +1997,89 @@
 
             // 立即触发截帧
             genVidThumbs();
+            // 加载书签
+            loadMarks(name);
         }
-        function swVid(name) {
+
+        async function loadMarks(name) {
+            const path = cur ? cur + '/' + name : name;
+            try {
+                const r = await fetch(`/api/markers/get?path=${encodeURIComponent(path)}`);
+                const d = await r.json();
+                markers = d.markers || [];
+                renderMarks();
+            } catch (e) {
+                markers = [];
+                renderMarks();
+            }
+        }
+
+        async function saveMarks() {
+            const name = $('#vtitle').textContent;
+            const path = cur ? cur + '/' + name : name;
+            await fetch(`/api/markers/save?path=${encodeURIComponent(path)}`, {
+                method: 'POST',
+                body: JSON.stringify({ markers })
+            });
+        }
+
+        function addMark() {
+            const v = $('#vid');
+            const time = v.currentTime;
+            const label = prompt('请输入该时间点的知识点名称/标注:', '');
+            if (label === null) return;
+            markers.push({ time, label: label || '未命名标注' });
+            markers.sort((a, b) => a.time - b.time);
+            renderMarks();
+            saveMarks();
+        }
+
+        function renderMarks() {
+            const list = $('#markList');
+            if (markers.length === 0) {
+                list.innerHTML = '<div style="font-size:12px;color:var(--t3);text-align:center;padding:20px">暂无标注，点击上方 + 或按 M 键添加</div>';
+                return;
+            }
+            list.innerHTML = markers.map((m, i) => `
+                <div class="mark-i" onclick="seekVid(${m.time})">
+                    <span class="mark-t">${fmtTime(m.time)}</span>
+                    <span class="mark-l">${esc(m.label)}</span>
+                    <span style="flex:1"></span>
+                    <button class="icon-btn-sm" style="border:none;background:transparent" onclick="event.stopPropagation();editMark(${i})" title="编辑名称">📝</button>
+                    <button class="icon-btn-sm" style="border:none;background:transparent" onclick="event.stopPropagation();delMark(${i})" title="删除标注">✕</button>
+                </div>
+            `).join('');
+        }
+
+        function editMark(i) {
+            const newLabel = prompt('修改知识点名称:', markers[i].label);
+            if (newLabel === null) return;
+            markers[i].label = newLabel || '未命名标注';
+            renderMarks();
+            saveMarks();
+        }
+
+        function delMark(i) {
+            markers.splice(i, 1);
+            renderMarks();
+            saveMarks();
+        }
+
+        function seekVid(t) {
+            const v = $('#vid');
+            v.currentTime = t;
+            v.play().catch(() => { });
+        }
+
+        function fmtTime(s) {
+            const h = Math.floor(s / 3600);
+            const m = Math.floor((s % 3600) / 60);
+            const se = Math.floor(s % 60);
+            const pad = n => String(n).padStart(2, '0');
+            return h > 0 ? `${h}:${pad(m)}:${pad(se)}` : `${m}:${pad(se)}`;
+        }
+
+        async function swVid(name) {
             const v = $('#vid'); v.src = fileUrl(name); $('#vtitle').textContent = name;
             const idx = vids.findIndex(f => f.name === name);
             vRot = 0; v.style.transform = ''; // 重置旋转
@@ -1821,6 +2087,7 @@
             $$('.pl-i').forEach((el, i) => el.classList.toggle('act', i === idx));
             v.play().catch(() => { });
             v.onended = () => { if (idx < vids.length - 1) swVid(vids[idx + 1].name); };
+            loadMarks(name);
         }
         function closeVP() { $('#vid').pause(); $('#vid').removeAttribute('src'); $('#vid').load(); $('#yt').classList.remove('show'); $('#yt').classList.remove('full-win'); document.body.style.overflow = ''; }
 
@@ -1955,6 +2222,7 @@
                 if (k === 'r') rotateVid();
                 if (k === 'f') toggleFullWin();
                 if (k === 'd') dlVid();
+                if (k === 'm') addMark();
                 if (e.key === 'Escape') closeVP();
             }
             if ($('#mkdirM').classList.contains('show') && e.key === 'Enter') doMkdir();

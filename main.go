@@ -47,6 +47,15 @@ type ListResponse struct {
 	Path  string     `json:"path"`
 }
 
+// 视频书签数据结构
+type Marker struct {
+	Time  float64 `json:"time"`
+	Label string  `json:"label"`
+}
+type MarkersResponse struct {
+	Markers []Marker `json:"markers"`
+}
+
 func main() {
 	os.MkdirAll(rootDir, 0755)
 	systray.Run(onReady, onExit)
@@ -138,6 +147,8 @@ func startServer() {
 	mux.HandleFunc("/api/mkdir", handleMkdir)
 
 	mux.HandleFunc("/api/status", handleStatus)
+	mux.HandleFunc("/api/markers/get", handleGetMarkers)
+	mux.HandleFunc("/api/markers/save", handleSaveMarkers)
 	mux.HandleFunc("/files/", handleFileServe)
 	mux.HandleFunc("/", handleMain)
 
@@ -212,6 +223,9 @@ func handleList(w http.ResponseWriter, r *http.Request) {
 	}
 	var files []FileInfo
 	for _, e := range entries {
+		if strings.HasSuffix(e.Name(), ".marks.json") {
+			continue
+		}
 		info, err := e.Info()
 		if err != nil {
 			continue
@@ -300,6 +314,68 @@ func handleStatus(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// 视频书签 API
+func handleGetMarkers(w http.ResponseWriter, r *http.Request) {
+	relPath := cleanRelPath(r.URL.Query().Get("path"))
+	if relPath == "" {
+		http.Error(w, "缺少路径参数", http.StatusBadRequest)
+		return
+	}
+	absPath := filepath.Join(rootDir, filepath.FromSlash(relPath))
+	if !isPathSafe(absPath) {
+		http.Error(w, "禁止访问", http.StatusForbidden)
+		return
+	}
+
+	marksPath := absPath + ".marks.json"
+	data, err := os.ReadFile(marksPath)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(MarkersResponse{Markers: []Marker{}})
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(data)
+}
+
+func handleSaveMarkers(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "方法不允许", http.StatusMethodNotAllowed)
+		return
+	}
+	relPath := cleanRelPath(r.URL.Query().Get("path"))
+	if relPath == "" {
+		http.Error(w, "缺少路径参数", http.StatusBadRequest)
+		return
+	}
+	absPath := filepath.Join(rootDir, filepath.FromSlash(relPath))
+	if !isPathSafe(absPath) {
+		http.Error(w, "禁止访问", http.StatusForbidden)
+		return
+	}
+
+	marksPath := absPath + ".marks.json"
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "读取请求体失败", http.StatusInternalServerError)
+		return
+	}
+
+	err = os.WriteFile(marksPath, body, 0644)
+	if err != nil {
+		http.Error(w, "写入标注失败", http.StatusInternalServerError)
+		return
+	}
+
+	// 在 Windows 下将标注文件设置为隐藏
+	if runtime.GOOS == "windows" {
+		exec.Command("attrib", "+h", marksPath).Run()
+	}
+
+	w.Write([]byte("OK"))
+}
+
 func getLocalIP() string {
 	addrs, err := net.InterfaceAddrs()
 	if err != nil {
@@ -357,13 +433,13 @@ func openBrowser(url string) {
 	cmd.Start()
 }
 
-// ===== 生成托盘图标（64x64 显眼的星形图标 ★） =====
+// ===== 生成托盘图标（标准的 16x16 像素，提高 Windows 兼容性） =====
 func createFireIcon() []byte {
-	const sz = 64
+	const sz = 16
 	img := image.NewRGBA(image.Rect(0, 0, sz, sz))
 
-	// 金黄色星星，更显眼
-	starColor := color.RGBA{255, 215, 0, 255} // 金色
+	// 金黄色星星
+	starColor := color.RGBA{255, 215, 0, 255}
 
 	cx, cy := float64(sz)/2, float64(sz)/2
 
@@ -373,7 +449,7 @@ func createFireIcon() []byte {
 	innerRadius := outerRadius * 0.4
 
 	for i := 0; i < 10; i++ {
-		angle := float64(i)*36.0 - 90.0 // 从顶部开始，每36度一个点
+		angle := float64(i)*36.0 - 90.0
 		rad := angle * 3.14159265359 / 180.0
 		var r float64
 		if i%2 == 0 {
@@ -385,11 +461,12 @@ func createFireIcon() []byte {
 		points[i][1] = cy + r*float64(sin(rad))
 	}
 
-	// 填充星形
 	for y := 0; y < sz; y++ {
 		for x := 0; x < sz; x++ {
 			if isInsidePolygon(float64(x), float64(y), points) {
 				img.Set(x, y, starColor)
+			} else {
+				img.Set(x, y, color.Transparent)
 			}
 		}
 	}
