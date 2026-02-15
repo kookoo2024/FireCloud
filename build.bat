@@ -11,7 +11,7 @@ SET GOOS=windows
 SET GOARCH=amd64
 
 echo [FireCloud] 开始编译...
-go build -ldflags "-s -w -H windowsgui" -o FireCloud.exe main.go
+go build -ldflags "-s -w -H=windowsgui" -o FireCloud.exe main.go
 
 if %ERRORLEVEL% equ 0 (
     echo [FireCloud] 编译成功！

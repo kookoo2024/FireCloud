@@ -291,44 +291,7 @@
             font-weight: 500
         }
 
-        /* === 目录页 Chips (分类标签) === */
-        .chips {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 24px;
-            overflow-x: auto;
-            padding-bottom: 8px;
-            scrollbar-width: none
-        }
 
-        .chips::-webkit-scrollbar {
-            display: none
-        }
-
-        .chip {
-            padding: 7px 14px;
-            background: var(--bg2);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 500;
-            white-space: nowrap;
-            color: var(--t2);
-            /* changed from fixed color */
-            transition: all 0.2s
-        }
-
-        .chip.act {
-            background: var(--t1);
-            /* changed from #fff */
-            color: var(--bg0);
-            /* changed from #000 */
-            border-color: var(--t1)
-        }
-
-        .chip:hover:not(.act) {
-            background: var(--bg4)
-        }
 
         /* === 视频卡片网格 === */
         .grid {
@@ -1116,13 +1079,47 @@
             min-height: 0
         }
 
+        .lb-img-box {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            border-radius: 12px;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* 强化版自动播放绿色发光特效（呼吸感） */
+        .lb.playing .lb-img-box {
+            box-shadow: 0 0 60px rgba(52, 211, 153, 0.7),
+                0 0 120px rgba(52, 211, 153, 0.3),
+                inset 0 0 35px rgba(52, 211, 153, 0.4);
+            background: rgba(52, 211, 153, 0.1);
+            animation: pulse-green 2s infinite ease-in-out;
+        }
+
+        @keyframes pulse-green {
+
+            0%,
+            100% {
+                box-shadow: 0 0 50px rgba(52, 211, 153, 0.5), 0 0 100px rgba(52, 211, 153, 0.2), inset 0 0 25px rgba(52, 211, 153, 0.3);
+                transform: scale(1);
+            }
+
+            50% {
+                box-shadow: 0 0 80px rgba(52, 211, 153, 0.9), 0 0 160px rgba(52, 211, 153, 0.4), inset 0 0 50px rgba(52, 211, 153, 0.5);
+                transform: scale(1.01);
+            }
+        }
+
         .lb-stage img {
             max-width: 88vw;
             max-height: calc(100vh - 160px);
             object-fit: contain;
-            border-radius: 4px;
-            transition: opacity .3s, transform .3s;
-            user-select: none
+            border-radius: 8px;
+            transition: opacity .3s, transform .3s, box-shadow 0.5s;
+            user-select: none;
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.8);
         }
 
         .lb-stage img.fade-out {
@@ -1427,14 +1424,7 @@
 
     <!-- 主内容 -->
     <div class="main" id="main">
-        <div class="chips" id="chips">
-            <div class="chip act">全部</div>
-            <div class="chip">视频</div>
-            <div class="chip">课件</div>
-            <div class="chip">图片</div>
-            <div class="chip">压缩包</div>
-            <div class="chip">文档</div>
-        </div>
+
         <div class="grid" id="grid"></div>
     </div>
 
@@ -1651,7 +1641,7 @@
         }
         // === 图标系统 (通用风格) ===
         const ICONS = {
-            folder: `<svg viewBox="0 0 24 24" fill="none"><path d="M10 4H4C2.9 4 2.01 4.9 2.01 6L2 18C2 19.1 2.9 20 4 20H20C21.1 20 22 19.1 22 18V8C22 6.9 21.1 6 20 6H12L10 4Z" fill="#FFCA28"/></svg>`,
+            folder: `<svg viewBox="0 0 24 24" fill="none"><path d="M10 4H4C2.9 4 2.01 4.9 2.01 6L2 18C2 19.1 2.9 20 4 20H20C21.1 20 22 19.1 22 18V8C22 6.9 21.1 6 20 6H12L10 4Z" fill="#4B5320"/></svg>`,
             word: `<svg viewBox="0 0 24 24" fill="none"><rect x="4" y="2" width="16" height="20" rx="2" fill="#2B579A"/><path d="M8 8V16M11 8L13 16L15 8" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
             excel: `<svg viewBox="0 0 24 24" fill="none"><rect x="4" y="2" width="16" height="20" rx="2" fill="#217346"/><path d="M9 9L15 15M15 9L9 15" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
             ppt: `<svg viewBox="0 0 24 24" fill="none"><rect x="4" y="2" width="16" height="20" rx="2" fill="#D24726"/><path d="M12 7V17M12 7H15C16.1 7 17 7.9 17 9C17 10.1 16.1 11 15 11H12" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
@@ -1753,6 +1743,7 @@
             if (force) lbStop();
             $('#lbPlayBtn').innerText = '⏸';
             $('#lbPlayBtn').classList.add('active');
+            $('#lb').classList.add('playing'); // 添加播放状态类
             lbTimer = setInterval(() => lbGo(1), lbInterval);
         }
 
@@ -1761,6 +1752,7 @@
             lbTimer = null;
             $('#lbPlayBtn').innerText = '▶';
             $('#lbPlayBtn').classList.remove('active');
+            $('#lb').classList.remove('playing'); // 移除播放状态类
         }
 
         function lbTogglePlay() {
