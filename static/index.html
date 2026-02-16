@@ -1,0 +1,2278 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>FireCloud</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg0: #0a0a0f;
+            --bg1: #111119;
+            --bg2: #1a1a25;
+            --bg3: #242434;
+            --bg4: #2e2e42;
+            --accent: #7c6aff;
+            --accent2: #a78bfa;
+            --glow: rgba(124, 106, 255, .2);
+            --t1: #eeeef2;
+            --t2: #97979f;
+            --t3: #55555f;
+            --border: rgba(255, 255, 255, .06);
+            --green: #34d399;
+            --red: #f87171;
+            --header-bg: rgba(10, 10, 15, .88);
+            --r: 12px;
+            --rs: 8px;
+            --tr: .2s cubic-bezier(.4, 0, .2, 1);
+        }
+
+        :root[data-theme="light"] {
+            --bg0: #f3f4f6;
+            --bg1: #ffffff;
+            --bg2: #e5e7eb;
+            --bg3: #d1d5db;
+            --bg4: #9ca3af;
+            /* 滚动条等颜色加深 */
+            --t1: #111827;
+            --t2: #4b5563;
+            --t3: #6b7280;
+            --border: rgba(0, 0, 0, 0.08);
+            /* 边框更淡 */
+            --header-bg: rgba(255, 255, 255, .85);
+            --glow: rgba(124, 106, 255, .1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg0);
+            color: var(--t1);
+            min-height: 100vh;
+            overflow-x: hidden;
+            transition: background 0.3s, color 0.3s;
+        }
+
+        button {
+            cursor: pointer;
+            font-family: inherit
+        }
+
+        ::-webkit-scrollbar {
+            width: 5px
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--bg4);
+            border-radius: 3px
+        }
+
+        /* === 顶栏 === */
+        .header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            height: 56px;
+            padding: 0 24px;
+            background: var(--header-bg);
+            backdrop-filter: blur(24px) saturate(1.5);
+            border-bottom: 1px solid var(--border);
+            transition: background 0.3s, border-color 0.3s;
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #ff6b6b, var(--accent), #38bdf8);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-right: 8px;
+            white-space: nowrap;
+            flex-shrink: 0;
+            cursor: pointer;
+            text-decoration: none
+        }
+
+        .back-btn {
+            width: 34px;
+            height: 34px;
+            border-radius: var(--rs);
+            border: 1px solid var(--border);
+            background: var(--bg2);
+            color: var(--t2);
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all var(--tr);
+            margin-right: 8px;
+            flex-shrink: 0
+        }
+
+        .back-btn:hover {
+            background: var(--bg3);
+            color: var(--t1)
+        }
+
+        .back-btn.hidden {
+            display: none
+        }
+
+        .nav {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex: 1;
+            min-width: 0;
+            overflow-x: auto;
+            padding: 4px 0
+        }
+
+        .nav a,
+        .nav span {
+            font-size: 13px;
+            padding: 5px 10px;
+            border-radius: 6px;
+            white-space: nowrap;
+            transition: all var(--tr)
+        }
+
+        .nav a {
+            color: var(--t2)
+        }
+
+        .nav a:hover {
+            color: var(--t1);
+            background: var(--bg3)
+        }
+
+        .nav .sep {
+            color: var(--t3);
+            font-size: 10px;
+            padding: 0 2px
+        }
+
+        .nav .cur {
+            color: var(--t1);
+            font-weight: 600;
+            background: var(--bg3);
+            padding: 5px 12px
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: auto;
+            flex-shrink: 0
+        }
+
+        .icon-btn {
+            width: 38px;
+            height: 38px;
+            border-radius: var(--rs);
+            border: 1px solid var(--border);
+            background: var(--bg2);
+            color: var(--t2);
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all var(--tr)
+        }
+
+        .icon-btn:hover {
+            background: var(--bg3);
+            color: var(--t1);
+            border-color: rgba(255, 255, 255, .1)
+        }
+
+        :root[data-theme="light"] .icon-btn:hover {
+            border-color: rgba(0, 0, 0, 0.1);
+        }
+
+        .ip-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 0 12px;
+            height: 38px;
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            color: var(--t2);
+            font-size: 13px;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all var(--tr);
+            cursor: pointer
+        }
+
+        .ip-badge:hover {
+            background: var(--bg3);
+            color: var(--accent);
+            border-color: var(--accent);
+            box-shadow: 0 0 15px var(--glow)
+        }
+
+        .ip-badge span {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--green);
+            box-shadow: 0 0 8px var(--green)
+        }
+
+        /* === 主内容 === */
+        .main {
+            padding: 20px 24px;
+            min-height: calc(100vh - 56px);
+            position: relative
+        }
+
+        /* 拖拽覆盖层（仅拖拽时显示） */
+        .drag-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 90;
+            background: rgba(10, 10, 15, .85);
+            backdrop-filter: blur(8px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none
+        }
+
+        :root[data-theme="light"] .drag-overlay {
+            background: rgba(255, 255, 255, .85);
+        }
+
+        .drag-overlay.show {
+            display: flex
+        }
+
+        .drag-box {
+            padding: 48px 64px;
+            border: 2px dashed var(--accent);
+            border-radius: 20px;
+            text-align: center;
+            background: rgba(124, 106, 255, .04);
+            animation: pulse 2s infinite
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                border-color: var(--accent)
+            }
+
+            50% {
+                border-color: var(--accent2)
+            }
+        }
+
+        .drag-box p:first-child {
+            font-size: 48px;
+            margin-bottom: 12px
+        }
+
+        .drag-box p:last-child {
+            font-size: 15px;
+            color: var(--accent2);
+            font-weight: 500
+        }
+
+
+
+        /* === 视频卡片网格 === */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px 16px
+        }
+
+        .item {
+            display: flex;
+            flex-direction: column;
+            cursor: pointer;
+            transition: transform 0.2s;
+            border-radius: 12px;
+            overflow: visible;
+            position: relative
+        }
+
+        /* 封面图容器 */
+        .thumb-box {
+            width: 100%;
+            aspect-ratio: 16/9;
+            border-radius: 12px;
+            background: var(--bg2);
+            /* changed from #222 */
+            overflow: hidden;
+            position: relative;
+            margin-bottom: 12px;
+            border: 1px solid var(--border);
+            /* added border for light mode visibility */
+        }
+
+        .thumb-inner {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            user-select: none;
+            background: var(--bg2) !important;
+            color: var(--t2);
+        }
+
+        .thumb-inner svg {
+            width: 70%;
+            height: 70%;
+            object-fit: contain;
+        }
+
+        .grid.list-view .thumb-inner svg {
+            width: 80%;
+            height: 80%;
+        }
+
+        .thumb-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            transition: transform 0.4s
+        }
+
+        .item:hover .thumb-box img {
+            transform: scale(1.03)
+        }
+
+        /* 大小标记 (仿时长) */
+        .size-tag {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            background: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            z-index: 2
+        }
+
+        /* 卡片内容区 */
+        .card-body {
+            display: flex;
+            gap: 12px;
+            padding: 0 4px
+        }
+
+        .card-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--bg3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0
+        }
+
+        .card-text {
+            flex: 1;
+            min-width: 0
+        }
+
+        .fname {
+            font-size: 15px;
+            font-weight: 600;
+            line-height: 1.4;
+            color: var(--t1);
+            /* changed from #fff */
+            margin-bottom: 4px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            word-break: break-all
+        }
+
+        .fmeta {
+            font-size: 13px;
+            color: var(--t2);
+            /* changed from #aaa */
+            line-height: 1.2
+        }
+
+        /* 菜单按钮 (仿三点) */
+        .card-menu {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--t2);
+            /* changed from #aaa */
+            font-size: 20px;
+            border-radius: 50%;
+            transition: background 0.2s
+        }
+
+        .card-menu:hover {
+            background: var(--bg3);
+            /* changed from rgba white */
+            color: var(--t1)
+        }
+
+        /* === 列表视图样式 === */
+        .grid.list-view {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .grid.list-view .item {
+            flex-direction: row;
+            align-items: center;
+            background: var(--bg1);
+            padding: 8px 16px;
+            border-radius: 8px;
+            gap: 16px;
+        }
+
+        :root[data-theme="light"] .grid.list-view .item {
+            border: 1px solid var(--border);
+        }
+
+        .grid.list-view .item:hover {
+            background: var(--bg2);
+        }
+
+        .grid.list-view .thumb-box {
+            width: 48px;
+            height: 48px;
+            margin-bottom: 0;
+            aspect-ratio: auto;
+            border-radius: 6px;
+            flex-shrink: 0;
+        }
+
+        .grid.list-view .thumb-inner {
+            font-size: 24px !important;
+        }
+
+        .grid.list-view .size-tag {
+            display: none;
+        }
+
+        .grid.list-view .card-body {
+            padding: 0;
+            flex: 1;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .grid.list-view .card-avatar {
+            display: none;
+        }
+
+        .grid.list-view .card-text {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+        }
+
+        .grid.list-view .fname {
+            margin-bottom: 0;
+            -webkit-line-clamp: 1;
+            line-clamp: 1;
+            flex: 1;
+        }
+
+        .grid.list-view .fmeta {
+            display: none;
+        }
+
+        .grid.list-view .card-menu {
+            margin-left: 12px;
+        }
+
+        /* 选中状态 */
+        .item.sel .thumb-box {
+            border: 3px solid var(--accent);
+            padding: 2px;
+            background: var(--accent)
+        }
+
+        .item .ck {
+            display: none
+        }
+
+        /* 隐藏旧的选择框，改用菜单勾选 */
+
+        .empty {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 100px 20px;
+            color: var(--t3);
+            grid-column: 1/-1
+        }
+
+        .empty span {
+            font-size: 72px;
+            margin-bottom: 16px;
+            opacity: .3
+        }
+
+        /* === 上传菜单 === */
+        .upload-menu {
+            position: absolute;
+            top: 48px;
+            right: 0;
+            width: 220px;
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: var(--r);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, .5);
+            display: none;
+            z-index: 110;
+            overflow: hidden
+        }
+
+        .upload-menu.show {
+            display: block;
+            animation: fadeDown .15s ease
+        }
+
+        @keyframes fadeDown {
+            from {
+                opacity: 0;
+                transform: translateY(-6px)
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0)
+            }
+        }
+
+        .upload-menu button {
+            width: 100%;
+            padding: 12px 16px;
+            border: none;
+            background: none;
+            color: var(--t1);
+            font-size: 13px;
+            text-align: left;
+            transition: background var(--tr);
+            display: flex;
+            align-items: center;
+            gap: 10px
+        }
+
+        .upload-menu button:hover {
+            background: var(--bg3)
+        }
+
+        /* === 操作浮条（选中文件时底部弹出）=== */
+        .action-bar {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(80px);
+            z-index: 100;
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, .5);
+            transition: transform .3s cubic-bezier(.4, 0, .2, 1);
+            backdrop-filter: blur(16px)
+        }
+
+        .action-bar.show {
+            transform: translateX(-50%) translateY(0)
+        }
+
+        .action-bar .cnt {
+            font-size: 13px;
+            color: var(--t2);
+            margin-right: 8px
+        }
+
+        .ab-btn {
+            padding: 8px 18px;
+            border-radius: var(--rs);
+            font-size: 13px;
+            font-weight: 500;
+            border: 1px solid var(--border);
+            background: var(--bg3);
+            color: var(--t1);
+            transition: all var(--tr)
+        }
+
+        .ab-btn:hover {
+            background: var(--bg4)
+        }
+
+        .ab-btn.del {
+            border-color: var(--red);
+            color: var(--red)
+        }
+
+        .ab-btn.del:hover {
+            background: rgba(248, 113, 113, .1)
+        }
+
+        /* === 浮动返回按钮 (照顾触摸屏) === */
+        .float-back {
+            position: fixed;
+            bottom: 24px;
+            left: 24px;
+            z-index: 250;
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            box-shadow: 0 8px 24px var(--glow);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            transition: all 0.2s cubic-bezier(.4, 0, .2, 1);
+            cursor: pointer;
+        }
+
+        .float-back:active {
+            transform: scale(0.9);
+            box-shadow: 0 4px 12px var(--glow);
+        }
+
+        .float-back.show {
+            display: flex;
+            animation: bounceIn .4s cubic-bezier(.17, .67, .83, .67);
+        }
+
+        @keyframes bounceIn {
+            from {
+                opacity: 0;
+                transform: scale(0.3) translateY(40px);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        /* === 上传进度 === */
+        .up-panel {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 200;
+            width: 340px;
+            max-height: 360px;
+            overflow-y: auto;
+            background: rgba(18, 18, 28, .94);
+            backdrop-filter: blur(20px);
+            border-radius: var(--r);
+            border: 1px solid var(--border);
+            box-shadow: 0 8px 40px rgba(0, 0, 0, .5);
+            display: none
+        }
+
+        .up-panel.show {
+            display: block;
+            animation: slideUp .3s ease
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(16px)
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0)
+            }
+        }
+
+        .up-hd {
+            padding: 14px 16px;
+            font-size: 13px;
+            font-weight: 600;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between
+        }
+
+        .up-item {
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--border);
+            font-size: 12px
+        }
+
+        .up-item .un {
+            color: var(--t2);
+            margin-bottom: 5px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap
+        }
+
+        .bar-bg {
+            height: 3px;
+            background: var(--bg4);
+            border-radius: 2px;
+            overflow: hidden
+        }
+
+        .bar-f {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), var(--green));
+            border-radius: 2px;
+            transition: width .3s
+        }
+
+        /* === YouTube 风格视频播放器 === */
+        .yt {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 300;
+            background: var(--bg0);
+            overflow: hidden;
+            transition: background 0.3s;
+        }
+
+        .yt.show {
+            display: flex
+        }
+
+        .yt-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            padding: 24px;
+            overflow-y: auto
+        }
+
+        .yt-video {
+            width: 100%;
+            max-height: 70vh;
+            background: #000;
+            flex-shrink: 0;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            position: relative;
+            /* 为浮动按钮提供定位参考 */
+        }
+
+        .yt-v-tools {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            z-index: 320;
+            display: flex;
+            gap: 8px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .yt-video:hover .yt-v-tools {
+            opacity: 1;
+        }
+
+        .yt-v-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.5);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            backdrop-filter: blur(8px);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .yt-v-btn:hover {
+            background: rgba(0, 0, 0, 0.8);
+            transform: scale(1.1);
+        }
+
+        .yt-video video {
+            width: 100%;
+            height: 100%;
+            max-height: 70vh;
+            outline: none;
+            object-fit: contain
+        }
+
+        .yt-info {
+            padding: 20px 0
+        }
+
+        .yt-info h2 {
+            font-size: 20px;
+            font-weight: 700;
+            line-height: 1.4;
+            color: var(--t1);
+            margin-bottom: 8px;
+            flex: 1
+        }
+
+        .yt-header-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .icon-btn-sm {
+            width: 32px;
+            height: 32px;
+            border-radius: var(--rs);
+            border: 1px solid var(--border);
+            background: var(--bg2);
+            color: var(--t2);
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all var(--tr);
+            flex-shrink: 0;
+        }
+
+        .icon-btn-sm:hover {
+            background: var(--bg3);
+            color: var(--t1);
+        }
+
+        .yt-info .yt-sub {
+            font-size: 14px;
+            color: var(--t2)
+        }
+
+        .yt-close {
+            position: absolute;
+            top: 16px;
+            left: 16px;
+            z-index: 310;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, .6);
+            border: none;
+            color: #fff;
+            font-size: 20px;
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all .2s
+        }
+
+        :root[data-theme="light"] .yt-close {
+            background: rgba(255, 255, 255, .8);
+            color: #000;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .yt-close:hover {
+            background: rgba(255, 255, 255, .1);
+            transform: scale(1.1)
+        }
+
+        :root[data-theme="light"] .yt-close:hover {
+            background: #fff;
+        }
+
+        /* 侧边栏播放列表（完全参照图示） */
+        .yt-side {
+            width: 400px;
+            padding: 24px 24px 24px 0;
+            overflow-y: auto;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column
+        }
+
+        .yt-side-hd {
+            padding-bottom: 16px;
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--t1)
+        }
+
+        .pl {
+            display: flex;
+            flex-direction: column;
+            gap: 12px
+        }
+
+        .pl-i {
+            display: flex;
+            gap: 12px;
+            cursor: pointer;
+            transition: all .2s;
+            border-radius: 8px;
+            padding: 4px
+        }
+
+        .pl-i:hover {
+            background: var(--bg3)
+        }
+
+        .pl-i.act {
+            background: var(--bg4)
+        }
+
+        .pl-i .pl-thumb {
+            width: 160px;
+            height: 90px;
+            border-radius: 8px;
+            background: var(--bg2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            flex-shrink: 0;
+            overflow: hidden;
+            position: relative
+        }
+
+        .pl-i .pl-t-box {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            padding-top: 2px
+        }
+
+        .pl-i .pl-t {
+            font-size: 14px;
+            font-weight: 500;
+            line-height: 1.4;
+            color: var(--t1);
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            margin-bottom: 4px
+        }
+
+        .pl-i .pl-m {
+            font-size: 12px;
+            color: var(--t2)
+        }
+
+        /* === 视频书签/标注样式 === */
+        .yt-marks {
+            margin-top: 24px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .yt-marks-hd {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+
+        .yt-marks-hd span {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--t1);
+        }
+
+        .mark-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .mark-i {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all var(--tr);
+        }
+
+        .mark-i:hover {
+            background: var(--bg3);
+            border-color: var(--accent);
+            transform: translateX(4px);
+        }
+
+        .mark-t {
+            font-family: monospace;
+            font-size: 13px;
+            color: var(--accent);
+            font-weight: 700;
+            background: var(--glow);
+            padding: 2px 6px;
+            border-radius: 4px;
+            flex-shrink: 0;
+        }
+
+        .mark-l {
+            font-size: 14px;
+            color: var(--t1);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .mark-dot {
+            position: absolute;
+            bottom: -2px;
+            width: 8px;
+            height: 8px;
+            background: #ffeb3b;
+            border-radius: 50%;
+            transform: translateX(-50%);
+            pointer-events: none;
+            box-shadow: 0 0 10px rgba(255, 235, 59, 0.8);
+            z-index: 10;
+        }
+
+        /* === 大厂级图片轮播灯箱 === */
+        .yt.full-win {
+            z-index: 999;
+        }
+
+        .yt.full-win .yt-side {
+            display: none;
+        }
+
+        .yt.full-win .yt-body {
+            padding: 0;
+        }
+
+        .yt.full-win .yt-video {
+            height: 100vh;
+            max-height: none;
+            border-radius: 0;
+        }
+
+        .yt.full-win .yt-info {
+            display: none;
+        }
+
+        .lb {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 400;
+            background: var(--bg0);
+            transition: background 0.3s;
+            height: 100dvh;
+            /* 使用动态高度，适配移动端地址栏 */
+        }
+
+        .lb.show {
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        /* 顶栏 */
+        .lb-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 20px;
+            flex-shrink: 0
+        }
+
+        .lb-top .lb-title {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--t1)
+        }
+
+        .lb-top .lb-cnt {
+            font-size: 13px;
+            color: var(--t2)
+        }
+
+        .lb-top .lb-x {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--bg2);
+            border: none;
+            color: var(--t1);
+            font-size: 20px;
+            transition: all var(--tr);
+            display: flex;
+            align-items: center;
+            justify-content: center
+        }
+
+        .lb-top .lb-x:hover {
+            background: var(--bg3)
+        }
+
+        /* 主图区 */
+        .lb-stage {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            min-height: 0;
+            touch-action: none;
+            padding: 10px;
+            /* 增加边距，防止贴边 */
+        }
+
+        .lb-img-box {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        /* 强化版自动播放绿色发光特效（呼吸感） */
+        .lb.playing .lb-img-box {
+            box-shadow: 0 0 60px rgba(52, 211, 153, 0.7),
+                0 0 120px rgba(52, 211, 153, 0.3),
+                inset 0 0 35px rgba(52, 211, 153, 0.4);
+            background: rgba(52, 211, 153, 0.1);
+            animation: pulse-green 2s infinite ease-in-out;
+        }
+
+        @keyframes pulse-green {
+
+            0%,
+            100% {
+                box-shadow: 0 0 50px rgba(52, 211, 153, 0.5), 0 0 100px rgba(52, 211, 153, 0.2), inset 0 0 25px rgba(52, 211, 153, 0.3);
+                transform: scale(1);
+            }
+
+            50% {
+                box-shadow: 0 0 80px rgba(52, 211, 153, 0.9), 0 0 160px rgba(52, 211, 153, 0.4), inset 0 0 50px rgba(52, 211, 153, 0.5);
+                transform: scale(1.01);
+            }
+        }
+
+        .lb-stage img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            display: block;
+            /* 消除底边空隙 */
+            border-radius: 8px;
+            transition: opacity .3s, transform .3s, box-shadow 0.5s;
+            user-select: none;
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.8);
+        }
+
+        .lb-stage img.fade-out {
+            opacity: 0;
+            transform: scale(.97)
+        }
+
+        .lb-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.4);
+            border: none;
+            color: #fff;
+            font-size: 26px;
+            backdrop-filter: blur(8px);
+            transition: all var(--tr);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 410;
+        }
+
+        .lb-arrow:hover {
+            background: var(--bg3);
+            transform: translateY(-50%) scale(1.05)
+        }
+
+        .lb-arrow.prev {
+            left: 16px
+        }
+
+        .lb-arrow.next {
+            right: 16px
+        }
+
+        /* 缩略图条 */
+        .lb-strip {
+            flex-shrink: 0;
+            padding: 12px 20px;
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            overflow-x: auto
+        }
+
+        .lb-strip .lb-th {
+            width: 64px;
+            height: 44px;
+            border-radius: 6px;
+            overflow: hidden;
+            cursor: pointer;
+            border: 2px solid transparent;
+            opacity: .45;
+            transition: all var(--tr);
+            flex-shrink: 0
+        }
+
+        .lb-strip .lb-th:hover {
+            opacity: .75
+        }
+
+        .lb-strip .lb-th.act {
+            opacity: 1;
+            border-color: var(--accent)
+        }
+
+        .lb-strip .lb-th img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover
+        }
+
+        /* === 灯箱控制条 (底部固定) === */
+        .lb-bar {
+            flex-shrink: 0;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(10px);
+            z-index: 402;
+            width: 100%;
+            position: relative;
+            bottom: auto;
+            left: auto;
+            transform: none;
+            border-radius: 0;
+            border: none;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .lb-bar button {
+            background: transparent;
+            border: none;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 20px;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .lb-bar button:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+            transform: scale(1.1);
+        }
+
+        .lb-bar button.active {
+            color: var(--accent);
+            background: rgba(124, 106, 255, 0.2);
+        }
+
+        .lb-bar .sep {
+            width: 1px;
+            height: 24px;
+            background: rgba(255, 255, 255, 0.2);
+            margin: 0 4px;
+        }
+
+        /* 隐藏原始缩略图条 (全屏模式或幻灯片模式下可选，这里先保留，只微调位置) */
+        .lb.show .lb-strip {
+            display: none;
+        }
+
+        /* 左右箭头 */
+        .lb-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: #fff;
+            font-size: 32px;
+            cursor: pointer;
+            z-index: 401;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .lb-arrow:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .lb-arrow.prev {
+            left: 20px;
+        }
+
+        .lb-arrow.next {
+            right: 20px;
+        }
+
+        .mdl-ov {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 500;
+            background: rgba(0, 0, 0, .55);
+            backdrop-filter: blur(4px);
+            align-items: center;
+            justify-content: center
+        }
+
+        .mdl-ov.show {
+            display: flex
+        }
+
+        .mdl {
+            background: var(--bg2);
+            border-radius: var(--r);
+            border: 1px solid var(--border);
+            padding: 28px;
+            width: 380px;
+            box-shadow: 0 12px 48px rgba(0, 0, 0, .5)
+        }
+
+        .mdl h3 {
+            font-size: 16px;
+            margin-bottom: 16px
+        }
+
+        .mdl input {
+            width: 100%;
+            padding: 11px 16px;
+            border-radius: var(--rs);
+            background: var(--bg0);
+            border: 1px solid var(--border);
+            color: var(--t1);
+            font-size: 14px;
+            outline: none;
+            transition: border-color var(--tr)
+        }
+
+        .mdl input:focus {
+            border-color: var(--accent)
+        }
+
+        .mdl .macts {
+            display: flex;
+            gap: 10px;
+            margin-top: 18px;
+            justify-content: flex-end
+        }
+
+        .mbtn {
+            padding: 9px 20px;
+            border-radius: var(--rs);
+            font-size: 13px;
+            font-weight: 500;
+            border: 1px solid var(--border);
+            background: var(--bg3);
+            color: var(--t1);
+            transition: all var(--tr)
+        }
+
+        .mbtn:hover {
+            background: var(--bg4)
+        }
+
+        .mbtn.primary {
+            background: var(--accent);
+            border-color: transparent;
+            color: #fff
+        }
+
+        .mbtn.primary:hover {
+            opacity: .9
+        }
+
+        @media(max-width:768px) {
+            .grid {
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+                gap: 8px
+            }
+
+            .header {
+                padding: 0 14px;
+                height: 48px
+            }
+
+            .main {
+                padding: 14px
+            }
+
+            .yt-side {
+                display: none
+            }
+
+            .lb-strip .lb-th {
+                width: 48px;
+                height: 32px
+            }
+
+            /* 移动端视频播放器适配 */
+            .yt {
+                flex-direction: column;
+                overflow-y: auto;
+            }
+
+            .yt-side {
+                width: 100%;
+                padding: 0 20px 40px 20px;
+                display: flex;
+                flex-direction: column;
+                flex-shrink: 0;
+                overflow-y: visible;
+            }
+
+            .yt-body {
+                flex: none;
+                width: 100%;
+                padding: 12px;
+            }
+
+            .yt-video {
+                max-height: 40vh;
+            }
+
+            .yt-v-tools {
+                opacity: 1;
+            }
+
+            .yt-marks {
+                margin-top: 16px;
+                padding-top: 16px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- 顶栏 -->
+    <div class="header">
+        <a class="logo" href="http://home.150700.xyz">🔥 FireCloud</a>
+        <button class="back-btn hidden" id="backBtn" onclick="goUp()" title="返回上级">←</button>
+        <div class="nav" id="nav"></div>
+        <div class="header-actions" style="position:relative">
+            <a id="ipBtn" class="ip-badge" title="局域网访问" target="_blank" style="display:none">
+                <span></span>
+                <p id="ipText">192.168.x.x</p>
+            </a>
+            <button class="icon-btn" onclick="toggleTheme()" title="切换主题" id="themeBtn">🌓</button>
+            <button class="icon-btn" onclick="toggleView()" title="切换布局" id="viewBtn">🔲</button>
+            <button class="icon-btn" onclick="showMkdir()" title="新建文件夹">📁</button>
+            <button class="icon-btn" id="upBtn" onclick="toggleUpMenu()" title="上传">⬆</button>
+            <div class="upload-menu" id="upMenu">
+                <button onclick="$('#fi').click();hideUpMenu()">📄 上传文件</button>
+                <button onclick="$('#fdi').click();hideUpMenu()">📂 上传文件夹</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 拖拽覆盖层 -->
+    <div class="drag-overlay" id="dragOv">
+        <div class="drag-box">
+            <p>📥</p>
+            <p>松手上传文件</p>
+        </div>
+    </div>
+
+    <!-- 主内容 -->
+    <div class="main" id="main">
+
+        <div class="grid" id="grid"></div>
+    </div>
+
+    <input type="file" id="fi" multiple hidden>
+    <input type="file" id="fdi" webkitdirectory hidden>
+
+    <button class="float-back" id="floatBack" onclick="goUp()" title="返回上级">🏠</button>
+
+    <!-- 选中操作浮条 -->
+    <div class="action-bar" id="abar">
+        <span class="cnt" id="selCnt"></span>
+        <button class="ab-btn" onclick="clearSel()">取消选择</button>
+        <button class="ab-btn" onclick="shareSel()" style="margin-right:12px">📤 分享</button>
+        <button class="ab-btn" onclick="dlSel()" style="border-color: var(--accent); color: var(--accent);">📥
+            下载</button>
+    </div>
+
+    <!-- 上传进度 -->
+    <div class="up-panel" id="upPanel">
+        <div class="up-hd"><span>上传中</span><span id="uc"></span></div>
+        <div id="upList"></div>
+    </div>
+
+    <!-- YouTube 视频播放器 -->
+    <div class="yt" id="yt">
+        <button class="yt-close" onclick="closeVP()">✕</button>
+        <div class="yt-body">
+            <div class="yt-video">
+                <video id="vid" controls playsinline webkit-playsinline preload="auto"></video>
+                <div class="yt-v-tools">
+                    <button class="yt-v-btn" onclick="addMark()" title="添加知识点书签 (快捷键: M)">🔖</button>
+                    <button class="yt-v-btn" onclick="rotateVid()" title="旋转视频 (快捷键: R)">↻</button>
+                    <button class="yt-v-btn" onclick="toggleFullWin()" title="网页全屏 (快捷键: F)">⛶</button>
+                    <button class="yt-v-btn" onclick="dlVid()" title="下载视频 (快捷键: D)">📥</button>
+                </div>
+            </div>
+            <div class="yt-info">
+                <div class="yt-header-row">
+                    <h2 id="vtitle"></h2>
+                </div>
+                <div class="yt-sub" id="vsub"></div>
+            </div>
+        </div>
+        <div class="yt-side">
+            <div class="yt-side-hd">播放列表 <span id="plCnt"></span></div>
+            <div class="pl" id="pl"></div>
+            <div class="yt-marks">
+                <div class="yt-marks-hd">
+                    <span>知识点索引 🔖</span>
+                    <button class="icon-btn-sm" onclick="addMark()" title="在当前时间打点">+</button>
+                </div>
+                <div class="mark-list" id="markList"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 图片灯箱 -->
+    <!-- 图片灯箱 -->
+    <div class="lb" id="lb">
+        <div class="lb-top">
+            <span class="lb-title" id="lbTitle"></span>
+            <span class="lb-cnt" id="lbCnt"></span>
+            <button class="lb-x" onclick="closeLB()">✕</button>
+        </div>
+
+        <div class="lb-stage">
+            <button class="lb-arrow prev" onclick="lbStop();lbGo(-1)">‹</button>
+            <div class="lb-img-box">
+                <img id="lbImg" src="" alt="" ondblclick="lbToggleFull();lbPlay(true)">
+            </div>
+            <button class="lb-arrow next" onclick="lbStop();lbGo(1)">›</button>
+        </div>
+
+        <div class="lb-bar">
+            <button onclick="lbStop();lbGo(-1)" title="上一张 (←)">⏮</button>
+            <button id="lbPlayBtn" onclick="lbTogglePlay()" title="自动播放 (空格)">▶</button>
+            <button id="lbTimeBtn" onclick="lbCycleTime()" title="切换间隔"
+                style="font-size:14px;font-weight:600;width:50px">5s</button>
+            <div class="sep"></div>
+            <button onclick="lbRot(90)" title="旋转 (R)">↻</button>
+            <button onclick="lbToggleFull()" title="全屏 (Enter/F)">⛶</button>
+            <div class="sep"></div>
+            <button onclick="closeLB()" title="退出 (Esc)">✕</button>
+        </div>
+
+        <!-- 缩略图条 (已隐藏，代码保留以免JS报错) -->
+        <div class="lb-strip" id="lbStrip" style="display:none"></div>
+    </div>
+
+    <!-- 分享模态框 -->
+    <div class="mdl-ov" id="shareM">
+        <div class="mdl" style="text-align:center">
+            <h3>📱 扫码分享</h3>
+            <div id="shareQr" style="margin:20px auto;width:200px;height:200px;background:#eee"></div>
+            <input type="text" id="shareUrl" readonly onclick="this.select()" style="margin-top:10px;text-align:center">
+            <div class="macts">
+                <button class="mbtn" onclick="$('#shareM').classList.remove('show')">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 新建文件夹 -->
+    <div class="mdl-ov" id="mkdirM">
+        <div class="mdl">
+            <h3>新建文件夹</h3>
+            <input type="text" id="mkdirN" placeholder="输入名称">
+            <div class="macts">
+                <button class="mbtn" onclick="$('#mkdirM').classList.remove('show')">取消</button>
+                <button class="mbtn primary" onclick="doMkdir()">创建</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const $ = s => document.querySelector(s), $$ = s => document.querySelectorAll(s);
+        let cur = '', files = [], sel = new Set(), imgs = [], vids = [], lbi = 0;
+        let lbTimer = null, lbInterval = 5000, lbR = 0; // 灯箱状态变量
+        let markers = []; // 视频标注
+        const imgE = /\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i, vidE = /\.(mp4|webm|mkv|avi|mov|flv)$/i;
+        const fileUrl = (name) => { const fp = cur ? cur + '/' + name : name; return '/files/' + encodeURIComponent(fp).replace(/%2F/g, '/'); };
+
+        // 获取状态并显示 IP
+        fetch('/api/status').then(r => r.json()).then(data => {
+            if (data.ip) {
+                const btn = $('#ipBtn');
+                $('#ipText').innerText = data.ip;
+                btn.href = `http://${data.ip}${location.port ? ':' + location.port : ''}`;
+                btn.style.display = 'flex';
+            }
+        });
+
+        window.addEventListener('DOMContentLoaded', () => {
+            cur = new URLSearchParams(location.search).get('path') || '';
+            load(); initDrag();
+            $('#fi').onchange = e => { up([...e.target.files]); e.target.value = ''; };
+            $('#fdi').onchange = e => { up([...e.target.files]); e.target.value = ''; };
+            document.addEventListener('click', e => { if (!e.target.closest('#upBtn') && !e.target.closest('#upMenu')) hideUpMenu(); });
+        });
+        window.addEventListener('popstate', () => { cur = new URLSearchParams(location.search).get('path') || ''; load(); });
+
+        // === 数据加载 ===
+        async function load() {
+            const r = await fetch(`/api/list?path=${encodeURIComponent(cur)}`);
+            const d = await r.json(); files = d.files || []; sel.clear(); updAbar();
+            imgs = files.filter(f => !f.isDir && imgE.test(f.name));
+            vids = files.filter(f => !f.isDir && vidE.test(f.name));
+            renderNav(); renderGrid();
+        }
+
+        // === 导航 ===
+        function renderNav() {
+            const isRoot = !cur;
+            $('#backBtn').classList.toggle('hidden', isRoot);
+            $('#floatBack').classList.toggle('show', !isRoot);
+
+            let h = '<a href="#" data-p="">根目录</a>';
+            if (cur) {
+                const ps = cur.split('/').filter(Boolean); let p = '';
+                ps.forEach((s, i) => {
+                    p += (p ? '/' : '') + s; h += '<span class="sep">›</span>';
+                    h += i === ps.length - 1 ? `<span class="cur">${esc(s)}</span>` : `<a href="#" data-p="${esc(p)}">${esc(s)}</a>`;
+                });
+            }
+            $('#nav').innerHTML = h;
+            $$('#nav a').forEach(a => a.onclick = e => { e.preventDefault(); nav(a.dataset.p); });
+        }
+        function goUp() {
+            if (!cur) return;
+            const ps = cur.split('/').filter(Boolean);
+            ps.pop();
+            nav(ps.join('/'));
+        }
+        function nav(p) { cur = p; history.pushState(null, '', `?path=${encodeURIComponent(cur)}`); load(); }
+
+        // === 文件网格 ===
+        function renderGrid() {
+            const g = $('#grid');
+            if (viewMode === 'list') g.classList.add('list-view');
+            else g.classList.remove('list-view');
+
+            if (!files.length) { g.innerHTML = '<div class="empty"><span>📭</span><p>空文件夹</p></div>'; return; }
+            g.innerHTML = files.map(f => {
+                const slug = ico(f.name, f.isDir);
+                let th = ''; const u = fileUrl(f.name);
+                if (f.isDir) th = getIcon(slug);
+                else if (imgE.test(f.name)) th = `<img src="${u}" loading="lazy" alt="">`;
+                else if (vidE.test(f.name)) th = `<img class="v-thumb" data-u="${u}" style="display:none">${getIcon(slug)}`;
+                else th = getIcon(slug);
+
+                return `<div class="item${sel.has(f.name) ? ' sel' : ''}" data-n="${esc(f.name)}" onclick="click_(event,'${esc(f.name)}',${f.isDir})">
+                    <div class="thumb-box">
+                        <div class="thumb-inner">${th}</div>
+                        ${f.isDir ? '' : `<div class="size-tag">${fmtSz(f.size)}</div>`}
+                    </div>
+                    <div class="card-body">
+                        <div class="card-avatar">${getIcon(slug)}</div>
+                        <div class="card-text">
+                            <div class="fname">${esc(f.name)}</div>
+                            <div class="fmeta">FireCloud · ${f.isDir ? '文件夹' : '文件'}</div>
+                        </div>
+                        <div class="card-menu" onclick="event.stopPropagation();togSel('${esc(f.name)}')">⋮</div>
+                    </div>
+                </div>`;
+            }).join('');
+            genVidThumbs();
+        }
+
+        // === 视频自动截帧 (串行优化，防止手机内存撑爆) ===
+        let thumbQueue = [];
+        let isProcessingThumb = false;
+
+        async function genVidThumbs() {
+            const imgs = $$('.v-thumb');
+            thumbQueue = Array.from(imgs).filter(img => !img.src || img.src === '');
+            processNextThumb();
+        }
+
+        async function processNextThumb() {
+            if (isProcessingThumb || thumbQueue.length === 0) return;
+            isProcessingThumb = true;
+
+            const img = thumbQueue.shift();
+            const video = document.createElement('video');
+            video.src = img.dataset.u;
+            video.preload = 'metadata';
+            video.muted = true;
+            video.playsInline = true;
+
+            try {
+                await new Promise((resolve, reject) => {
+                    video.onloadedmetadata = () => {
+                        video.currentTime = Math.min(video.duration * 0.1, 2);
+                    };
+                    video.onseeked = resolve;
+                    video.onerror = reject;
+                    setTimeout(reject, 3000); // 3秒超时，防止死锁
+                });
+
+                const canvas = document.createElement('canvas');
+                canvas.width = video.videoWidth / 2; // 缩小尺寸减少内存
+                canvas.height = video.videoHeight / 2;
+                canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+                img.src = canvas.toDataURL('image/jpeg', 0.6);
+                img.style.display = 'block';
+                if (img.nextElementSibling) img.nextElementSibling.style.display = 'none';
+            } catch (e) {
+                console.warn('截帧失败:', img.dataset.u);
+            } finally {
+                video.src = '';
+                video.load(); // 强制释放内存
+                isProcessingThumb = false;
+                processNextThumb(); // 处理下一个
+            }
+        }
+        // === 图标系统 (通用风格) ===
+        const ICONS = {
+            folder: `<svg viewBox="0 0 24 24" fill="none"><path d="M10 4H4C2.9 4 2.01 4.9 2.01 6L2 18C2 19.1 2.9 20 4 20H20C21.1 20 22 19.1 22 18V8C22 6.9 21.1 6 20 6H12L10 4Z" fill="#4B5320"/></svg>`,
+            word: `<svg viewBox="0 0 24 24" fill="none"><rect x="4" y="2" width="16" height="20" rx="2" fill="#2B579A"/><path d="M8 8V16M11 8L13 16L15 8" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+            excel: `<svg viewBox="0 0 24 24" fill="none"><rect x="4" y="2" width="16" height="20" rx="2" fill="#217346"/><path d="M9 9L15 15M15 9L9 15" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+            ppt: `<svg viewBox="0 0 24 24" fill="none"><rect x="4" y="2" width="16" height="20" rx="2" fill="#D24726"/><path d="M12 7V17M12 7H15C16.1 7 17 7.9 17 9C17 10.1 16.1 11 15 11H12" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+            pdf: `<svg viewBox="0 0 24 24" fill="none"><rect x="4" y="2" width="16" height="20" rx="2" fill="#F44336"/><path d="M8 8H12C14.2 8 16 9.8 16 12C16 14.2 14.2 16 12 16H8V8Z" stroke="white" stroke-width="2"/></svg>`,
+            zip: `<svg viewBox="0 0 24 24" fill="none"><rect x="4" y="2" width="16" height="20" rx="2" fill="#607D8B"/><path d="M11 2V4M13 4V6M11 6V8M13 8V10M11 10V12M13 12V14M11 14V16" stroke="#FFD54F" stroke-width="2"/></svg>`,
+            video: `<svg viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="16" rx="2" fill="#673AB7"/><circle cx="12" cy="12" r="3" fill="white"/></svg>`,
+            audio: `<svg viewBox="0 0 24 24" fill="none"><rect x="4" y="2" width="16" height="20" rx="2" fill="#009688"/><path d="M9 17V7L16 5V15" stroke="white" stroke-width="2" stroke-linejoin="round"/></svg>`,
+            image: `<svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" fill="#03A9F4"/><path d="M3 14L8 9L21 19V21H3V14Z" fill="white" opacity="0.6"/><circle cx="8" cy="8" r="2" fill="white"/></svg>`,
+            text: `<svg viewBox="0 0 24 24" fill="none"><rect x="4" y="2" width="16" height="20" rx="2" fill="#9E9E9E"/><path d="M8 7H16M8 11H16M8 15H13" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>`,
+            exe: `<svg viewBox="0 0 24 24" fill="none"><rect x="4" y="2" width="16" height="20" rx="2" fill="#455A64"/><path d="M8 8L16 16M16 8L8 16" stroke="#81C784" stroke-width="2"/></svg>`,
+            file: `<svg viewBox="0 0 24 24" fill="none"><rect x="4" y="2" width="16" height="20" rx="2" fill="#BDBDBD"/><path d="M14 2V8H20" stroke="white" stroke-width="2" stroke-linejoin="round"/></svg>`
+        };
+
+        function getIcon(slug) {
+            return ICONS[slug] || ICONS.file;
+        }
+
+        function ico(n, isDir) {
+            if (isDir) return 'folder';
+            n = n.toLowerCase();
+            if (/\.(mp4|webm|mkv|avi|mov|flv|wmv|ts)$/.test(n)) return 'video';
+            if (/\.(mp3|wav|ogg|flac|m4a|aac)$/.test(n)) return 'audio';
+            if (/\.(jpg|jpeg|png|gif|webp|bmp|svg|ico)$/.test(n)) return 'image';
+            if (/\.(zip|rar|7z|tar|gz|bz2)$/.test(n)) return 'zip';
+            if (/\.(doc|docx)$/.test(n)) return 'word';
+            if (/\.(xls|xlsx|csv)$/.test(n)) return 'excel';
+            if (/\.(ppt|pptx)$/.test(n)) return 'ppt';
+            if (/\.pdf$/.test(n)) return 'pdf';
+            if (/\.(txt|md|log|ini|conf|js|ts|json|html|htm|css|scss|less|go|py|java|c|cpp|h|cs|sh|bat)$/.test(n)) return 'text';
+            if (/\.(exe|msi|apk|dmg)$/.test(n)) return 'exe';
+            return 'file';
+        }
+
+        function click_(e, name, isDir) {
+            if (e.target.classList.contains('ck')) return;
+            if (isDir) { nav(cur ? cur + '/' + name : name); }
+            else if (imgE.test(name)) { lbi = imgs.findIndex(f => f.name === name); openLB(); }
+            else if (vidE.test(name)) { openVP(name); }
+            else window.open(fileUrl(name), '_blank');
+        }
+
+        // === 图片灯箱逻辑 ===
+        let touchX = 0, touchY = 0;
+        function openLB() {
+            $('#lb').classList.add('show');
+            lbR = 0; lbStop(); updLbUV();
+            document.body.style.overflow = 'hidden';
+            renderStrip();
+
+            // 触摸增强支持
+            const lb = $('#lb');
+            lb.ontouchstart = e => {
+                touchX = e.touches[0].clientX;
+                touchY = e.touches[0].clientY;
+            };
+            lb.ontouchend = e => {
+                const diffX = e.changedTouches[0].clientX - touchX;
+                const diffY = e.changedTouches[0].clientY - touchY;
+
+                // 确保是水平滑动且位移足够大
+                if (Math.abs(diffX) > 60 && Math.abs(diffX) > Math.abs(diffY)) {
+                    lbStop();
+                    lbGo(diffX > 0 ? -1 : 1);
+                }
+            };
+        }
+
+        function closeLB() {
+            $('#lb').classList.remove('show');
+            lbStop();
+            if (document.fullscreenElement) document.exitFullscreen();
+            document.body.style.overflow = '';
+        }
+
+        // 切换图片
+        function lbGo(d) {
+            lbi = (lbi + d + imgs.length) % imgs.length;
+            lbR = 0; // 切换重置旋转
+            updLbUV();
+        }
+
+        // 更新界面
+        function updLbUV() {
+            const f = imgs[lbi];
+            $('#lbTitle').innerText = f.name;
+            $('#lbCnt').innerText = `${lbi + 1} / ${imgs.length}`;
+            const img = $('#lbImg');
+
+            // 预加载/动画
+            img.style.opacity = 0;
+            img.style.transform = `scale(0.95) rotate(0deg)`;
+
+            setTimeout(() => {
+                img.src = fileUrl(f.name);
+                img.onload = () => {
+                    img.style.opacity = 1;
+                    img.style.transform = `scale(1) rotate(${lbR}deg)`;
+                };
+            }, 100);
+
+            // 更新缩略图高亮
+            $$('.lb-th').forEach((el, i) => el.classList.toggle('act', i === lbi));
+            // 滚动缩略图条
+            const th = $$('.lb-th')[lbi];
+            if (th) th.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        }
+
+        // 旋转
+        function lbRot(deg) {
+            lbR = (lbR + deg) % 360;
+            $('#lbImg').style.transform = `scale(1) rotate(${lbR}deg)`;
+        }
+
+        // 自动播放
+        function lbPlay(force) {
+            if (lbTimer && !force) return;
+            if (force) lbStop();
+            $('#lbPlayBtn').innerText = '⏸';
+            $('#lbPlayBtn').classList.add('active');
+            $('#lb').classList.add('playing'); // 添加播放状态类
+            lbTimer = setInterval(() => lbGo(1), lbInterval);
+        }
+
+        function lbStop() {
+            if (lbTimer) clearInterval(lbTimer);
+            lbTimer = null;
+            $('#lbPlayBtn').innerText = '▶';
+            $('#lbPlayBtn').classList.remove('active');
+            $('#lb').classList.remove('playing'); // 移除播放状态类
+        }
+
+        function lbTogglePlay() {
+            lbTimer ? lbStop() : lbPlay();
+        }
+
+        function lbCycleTime() {
+            // 5s -> 30s -> 60s -> 5s
+            if (lbInterval === 5000) lbInterval = 30000;
+            else if (lbInterval === 30000) lbInterval = 60000;
+            else lbInterval = 5000;
+
+            $('#lbTimeBtn').innerText = lbInterval === 60000 ? '60s' : (lbInterval / 1000 + 's');
+
+            // 如果正在播放，重置计时器
+            if (lbTimer) { lbStop(); lbPlay(); }
+        }
+
+        function lbToggleFull() {
+            if (!document.fullscreenElement) {
+                $('#lb').requestFullscreen().catch(err => console.log(err));
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        // 渲染缩略图条 (按需调用)
+        function renderStrip() {
+            $('#lbStrip').innerHTML = imgs.map((f, i) =>
+                `<div class="lb-th${i === lbi ? ' act' : ''}" onclick="lbi=${i};lbStop();updLbUV()">
+                    <img src="${fileUrl(f.name)}" loading="lazy">
+                </div>`
+            ).join('');
+        }
+
+        // === YouTube 视频播放器 ===
+        let vRot = 0;
+        function openVP(name) {
+            const v = $('#vid'); v.src = fileUrl(name); $('#vtitle').textContent = name;
+            vRot = 0; v.style.transform = ''; // 重置旋转
+            const idx = vids.findIndex(f => f.name === name);
+            $('#vsub').textContent = `${vids.length} 个视频 · 正在播放 #${idx + 1}`;
+            $('#plCnt').textContent = `播放列表`;
+            $('#yt').classList.add('show'); document.body.style.overflow = 'hidden';
+            // 渲染播放列表
+            $('#pl').innerHTML = vids.map((f, i) => `<div class="pl-i${f.name === name ? ' act' : ''}" onclick="swVid('${esc(f.name)}')">
+<div class="pl-thumb">
+    <img class="v-thumb" data-u="${fileUrl(f.name)}" style="display:none;width:100%;height:100%;object-fit:contain">
+    <div class="thumb-inner" style="font-size:32px">${getIcon('video')}</div>
+</div>
+<div class="pl-t-box">
+    <div class="pl-t">${esc(f.name)}</div>
+    <div class="pl-m">${fmtSz(f.size)}</div>
+</div></div>`).join('');
+            v.play().catch(() => { });
+            v.onended = () => { if (idx < vids.length - 1) swVid(vids[idx + 1].name); };
+
+            // 立即触发截帧
+            genVidThumbs();
+            // 加载书签
+            loadMarks(name);
+        }
+
+        async function loadMarks(name) {
+            const path = cur ? cur + '/' + name : name;
+            try {
+                const r = await fetch(`/api/markers/get?path=${encodeURIComponent(path)}`);
+                const d = await r.json();
+                markers = d.markers || [];
+                renderMarks();
+            } catch (e) {
+                markers = [];
+                renderMarks();
+            }
+        }
+
+        async function saveMarks() {
+            const name = $('#vtitle').textContent;
+            const path = cur ? cur + '/' + name : name;
+            await fetch(`/api/markers/save?path=${encodeURIComponent(path)}`, {
+                method: 'POST',
+                body: JSON.stringify({ markers })
+            });
+        }
+
+        function addMark() {
+            const v = $('#vid');
+            const time = v.currentTime;
+            const label = prompt('请输入该时间点的知识点名称/标注:', '');
+            if (label === null) return;
+            markers.push({ time, label: label || '未命名标注' });
+            markers.sort((a, b) => a.time - b.time);
+            renderMarks();
+            saveMarks();
+        }
+
+        function renderMarks() {
+            const list = $('#markList');
+            if (markers.length === 0) {
+                list.innerHTML = '<div style="font-size:12px;color:var(--t3);text-align:center;padding:20px">暂无标注，点击上方 + 或按 M 键添加</div>';
+                return;
+            }
+            list.innerHTML = markers.map((m, i) => `
+                <div class="mark-i" onclick="seekVid(${m.time})">
+                    <span class="mark-t">${fmtTime(m.time)}</span>
+                    <span class="mark-l">${esc(m.label)}</span>
+                    <span style="flex:1"></span>
+                    <button class="icon-btn-sm" style="border:none;background:transparent" onclick="event.stopPropagation();editMark(${i})" title="编辑名称">📝</button>
+                    <button class="icon-btn-sm" style="border:none;background:transparent" onclick="event.stopPropagation();delMark(${i})" title="删除标注">✕</button>
+                </div>
+            `).join('');
+        }
+
+        function editMark(i) {
+            const newLabel = prompt('修改知识点名称:', markers[i].label);
+            if (newLabel === null) return;
+            markers[i].label = newLabel || '未命名标注';
+            renderMarks();
+            saveMarks();
+        }
+
+        function delMark(i) {
+            markers.splice(i, 1);
+            renderMarks();
+            saveMarks();
+        }
+
+        function seekVid(t) {
+            const v = $('#vid');
+            v.currentTime = t;
+            v.play().catch(() => { });
+        }
+
+        function fmtTime(s) {
+            const h = Math.floor(s / 3600);
+            const m = Math.floor((s % 3600) / 60);
+            const se = Math.floor(s % 60);
+            const pad = n => String(n).padStart(2, '0');
+            return h > 0 ? `${h}:${pad(m)}:${pad(se)}` : `${m}:${pad(se)}`;
+        }
+
+        async function swVid(name) {
+            const v = $('#vid'); v.src = fileUrl(name); $('#vtitle').textContent = name;
+            const idx = vids.findIndex(f => f.name === name);
+            vRot = 0; v.style.transform = ''; // 重置旋转
+            $('#vsub').textContent = `${vids.length} 个视频 · 正在播放 #${idx + 1}`;
+            $$('.pl-i').forEach((el, i) => el.classList.toggle('act', i === idx));
+            v.play().catch(() => { });
+            v.onended = () => { if (idx < vids.length - 1) swVid(vids[idx + 1].name); };
+            loadMarks(name);
+        }
+        function closeVP() { $('#vid').pause(); $('#vid').removeAttribute('src'); $('#vid').load(); $('#yt').classList.remove('show'); $('#yt').classList.remove('full-win'); document.body.style.overflow = ''; }
+
+        function rotateVid() {
+            vRot = (vRot + 90) % 360;
+            const v = $('#vid');
+            v.style.transition = 'transform 0.3s ease';
+            v.style.transform = `rotate(${vRot}deg)`;
+        }
+        function dlVid() {
+            const name = $('#vtitle').textContent;
+            const a = document.createElement('a');
+            a.href = fileUrl(name);
+            a.download = name;
+            a.click();
+        }
+        function toggleFullWin() {
+            $('#yt').classList.toggle('full-win');
+        }
+
+        // === 选择功能 ===
+        function togSel(n) {
+            sel.has(n) ? sel.delete(n) : sel.add(n);
+            $$('.item').forEach(el => el.classList.toggle('sel', sel.has(el.dataset.n))); updAbar();
+        }
+        function clearSel() { sel.clear(); $$('.item').forEach(el => el.classList.remove('sel')); updAbar(); }
+        function updAbar() { const a = $('#abar'); if (sel.size) { a.classList.add('show'); $('#selCnt').textContent = `已选 ${sel.size} 项`; } else a.classList.remove('show'); }
+        async function shareSel() {
+            try {
+                if (sel.size !== 1) { alert('请一次选择一个文件进行分享'); return; }
+                const n = [...sel][0];
+                const f = files.find(item => item.name === n);
+                if (!f) return;
+
+                const path = cur ? cur + '/' + n : n;
+                const r = await fetch(`/api/share?path=${encodeURIComponent(path)}`);
+                if (!r.ok) throw new Error(`HTTP ${r.status}: ` + await r.text());
+                const d = await r.json();
+
+                $('#shareM').classList.add('show');
+                $('#shareQr').innerHTML = `<img src="data:image/png;base64,${d.qr}" style="width:100%;height:100%">`;
+                $('#shareUrl').value = d.url;
+                clearSel();
+            } catch (e) {
+                console.error('Share Error:', e);
+                alert('分享失败，请检查控制台或后端日志。\n错误: ' + e.message);
+            }
+        }
+
+        async function dlSel() {
+            for (const n of sel) {
+                const f = files.find(item => item.name === n);
+                if (f && !f.isDir) {
+                    const a = document.createElement('a');
+                    a.href = fileUrl(n);
+                    a.download = n;
+                    a.style.display = 'none';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    await new Promise(r => setTimeout(r, 200));
+                }
+            }
+            clearSel();
+        }
+
+        // === 上传菜单 ===
+        function toggleUpMenu() { $('#upMenu').classList.toggle('show'); }
+        function hideUpMenu() { $('#upMenu').classList.remove('show'); }
+
+        // === 拖拽上传 ===
+        let dragCnt = 0;
+        function initDrag() {
+            const b = document.body, ov = $('#dragOv');
+            b.addEventListener('dragenter', e => { e.preventDefault(); dragCnt++; ov.classList.add('show'); });
+            b.addEventListener('dragleave', e => { e.preventDefault(); dragCnt--; if (dragCnt <= 0) { dragCnt = 0; ov.classList.remove('show'); } });
+            b.addEventListener('dragover', e => e.preventDefault());
+            b.addEventListener('drop', async e => {
+                e.preventDefault(); dragCnt = 0; ov.classList.remove('show');
+                const items = e.dataTransfer.items; if (!items) return;
+                const all = [], ps = [];
+                for (const it of items) { const en = it.webkitGetAsEntry ? it.webkitGetAsEntry() : null; if (en) ps.push(trav(en, '', all)); }
+                await Promise.all(ps); if (all.length) upPath(all);
+            });
+        }
+        function trav(en, base, res) {
+            return new Promise(ok => {
+                if (en.isFile) en.file(f => { res.push({ file: f, rel: base + f.name }); ok(); });
+                else if (en.isDirectory) {
+                    const rd = en.createReader(); const go = () => {
+                        rd.readEntries(async ents => {
+                            if (!ents.length) { ok(); return; } for (const e of ents) await trav(e, base + en.name + '/', res); go();
+                        })
+                    }; go();
+                }
+            });
+        }
+        function up(fl) { upPath(fl.map(f => ({ file: f, rel: f.webkitRelativePath || f.name }))); }
+        async function upPath(items) {
+            const pnl = $('#upPanel'), list = $('#upList'), cnt = $('#uc'); pnl.classList.add('show'); list.innerHTML = ''; let done = 0;
+            for (let i = 0; i < items.length; i++) {
+                const { file, rel } = items[i]; cnt.textContent = `${done}/${items.length}`;
+                const id = 'u' + i; list.innerHTML += `<div class="up-item" id="${id}"><div class="un">${esc(rel)}</div><div class="bar-bg"><div class="bar-f" style="width:0%"></div></div></div>`;
+                list.scrollTop = list.scrollHeight;
+                const path = cur ? cur + '/' + rel : rel;
+                await upOne(file, path, $(`#${id} .bar-f`)); done++; cnt.textContent = `${done}/${items.length}`;
+            }
+            setTimeout(() => { pnl.classList.remove('show'); load(); }, 1000);
+        }
+        function upOne(file, path, bar) {
+            return new Promise((ok, no) => {
+                const x = new XMLHttpRequest(); x.open('POST', `/api/upload?path=${encodeURIComponent(path)}`);
+                x.upload.onprogress = e => { if (e.lengthComputable && bar) bar.style.width = Math.round(e.loaded / e.total * 100) + '%'; };
+                x.onload = () => { if (bar) bar.style.width = '100%'; ok(); }; x.onerror = () => no(); x.send(file);
+            });
+        }
+
+        // === 新建文件夹 ===
+        function showMkdir() { $('#mkdirM').classList.add('show'); $('#mkdirN').value = ''; setTimeout(() => $('#mkdirN').focus(), 50); }
+        async function doMkdir() {
+            const n = $('#mkdirN').value.trim(); if (!n) return;
+            await fetch(`/api/mkdir?path=${encodeURIComponent(cur ? cur + '/' + n : n)}`, { method: 'POST' });
+            $('#mkdirM').classList.remove('show'); load();
+        }
+
+
+        // === 键盘 ===
+        document.addEventListener('keydown', e => {
+            if ($('#lb').classList.contains('show')) { if (e.key === 'ArrowLeft') lbGo(-1); if (e.key === 'ArrowRight') lbGo(1); if (e.key === 'Escape') closeLB(); }
+            if ($('#yt').classList.contains('show')) {
+                const k = e.key.toLowerCase();
+                if (k === 'r') rotateVid();
+                if (k === 'f') toggleFullWin();
+                if (k === 'd') dlVid();
+                if (k === 'm') addMark();
+                if (e.key === 'Escape') closeVP();
+            }
+            if ($('#mkdirM').classList.contains('show') && e.key === 'Enter') doMkdir();
+            if (e.key === 'Escape') { $('#mkdirM').classList.remove('show'); clearSel(); }
+        });
+
+        // === 工具 ===
+        function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+        function fmtSz(b) { if (!b) return '0 B'; const k = 1024, u = ['B', 'KB', 'MB', 'GB', 'TB'], i = Math.floor(Math.log(b) / Math.log(k)); return (b / Math.pow(k, i)).toFixed(i ? 1 : 0) + ' ' + u[i]; }
+
+        // === 主题切换 ===
+        function initTheme() {
+            const t = localStorage.getItem('theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', t);
+            updateThemeBtn(t);
+        }
+        function toggleTheme() {
+            const cur = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', cur);
+            localStorage.setItem('theme', cur);
+            updateThemeBtn(cur);
+        }
+        function updateThemeBtn(t) {
+            const btn = document.getElementById('themeBtn');
+            if (btn) btn.innerHTML = t === 'light' ? '🌞' : '🌙';
+        }
+        initTheme();
+        // === 布局切换 ===
+        let viewMode = localStorage.getItem('viewMode') || 'card';
+        function initView() {
+            updateViewUI();
+        }
+        function toggleView() {
+            viewMode = viewMode === 'card' ? 'list' : 'card';
+            localStorage.setItem('viewMode', viewMode);
+            updateViewUI();
+        }
+        function updateViewUI() {
+            const g = $('#grid');
+            const btn = $('#viewBtn');
+            if (viewMode === 'list') {
+                g.classList.add('list-view');
+                btn.innerHTML = '☰';
+            } else {
+                g.classList.remove('list-view');
+                btn.innerHTML = '🔲';
+            }
+        }
+        initView();
+    </script>
+</body>
+
+</html>
