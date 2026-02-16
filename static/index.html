@@ -1133,7 +1133,52 @@
 
         .lb-top .lb-cnt {
             font-size: 13px;
-            color: var(--t2)
+            color: var(--t2);
+            margin-right: 12px;
+        }
+
+        .lb-top .lb-marks-wrap {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex: 1;
+            overflow-x: auto;
+            scrollbar-width: none;
+            /* Firefox */
+            padding: 0 10px;
+        }
+
+        .lb-top .lb-marks-wrap::-webkit-scrollbar {
+            display: none;
+            /* Chrome/Safari */
+        }
+
+        .img-tag {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--accent2);
+            background: var(--glow);
+            padding: 2px 8px;
+            border-radius: 12px;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            border: 1px solid rgba(167, 139, 250, 0.2);
+            cursor: default;
+        }
+
+        .img-tag .tag-btn {
+            font-size: 10px;
+            opacity: 0.4;
+            cursor: pointer;
+            padding: 2px;
+            border-radius: 50%;
+        }
+
+        .img-tag:hover .tag-btn {
+            opacity: 1;
+            background: rgba(255, 255, 255, 0.1);
         }
 
         .lb-top .lb-x {
@@ -1613,6 +1658,7 @@
     <div class="lb" id="lb">
         <div class="lb-top">
             <span class="lb-title" id="lbTitle"></span>
+            <div class="lb-marks-wrap" id="imgMarkList"></div>
             <span class="lb-cnt" id="lbCnt"></span>
             <button class="lb-x" onclick="closeLB()">✕</button>
         </div>
@@ -1631,14 +1677,14 @@
             <button id="lbTimeBtn" onclick="lbCycleTime()" title="切换间隔"
                 style="font-size:14px;font-weight:600;width:50px">5s</button>
             <div class="sep"></div>
+            <button onclick="addImgMark()" title="添加图片标注 (M)">🔖</button>
             <button onclick="lbRot(90)" title="旋转 (R)">↻</button>
             <button onclick="lbToggleFull()" title="全屏 (Enter/F)">⛶</button>
             <div class="sep"></div>
             <button onclick="closeLB()" title="退出 (Esc)">✕</button>
         </div>
 
-        <!-- 缩略图条 (已隐藏，代码保留以免JS报错) -->
-        <div class="lb-strip" id="lbStrip" style="display:none"></div>
+        <!-- 移除旧托盘结构 -->
     </div>
 
     <!-- 分享模态框 -->
@@ -1669,7 +1715,8 @@
         const $ = s => document.querySelector(s), $$ = s => document.querySelectorAll(s);
         let cur = '', files = [], sel = new Set(), imgs = [], vids = [], lbi = 0;
         let lbTimer = null, lbInterval = 5000, lbR = 0; // 灯箱状态变量
-        let markers = []; // 视频标注
+        let markers = []; // 视频变量
+        let imgMarkers = []; // 图片变量
         const imgE = /\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i, vidE = /\.(mp4|webm|mkv|avi|mov|flv)$/i;
         const fileUrl = (name) => { const fp = cur ? cur + '/' + name : name; return '/files/' + encodeURIComponent(fp).replace(/%2F/g, '/'); };
 
@@ -1914,6 +1961,69 @@
             // 滚动缩略图条
             const th = $$('.lb-th')[lbi];
             if (th) th.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+
+            // 加载图片标注
+            loadImgMarks(f.name);
+        }
+
+        // === 图片标注逻辑 (复用 API) ===
+        async function loadImgMarks(name) {
+            const path = cur ? cur + '/' + name : name;
+            try {
+                const r = await fetch(`/api/markers/get?path=${encodeURIComponent(path)}`);
+                const d = await r.json();
+                imgMarkers = d.markers || [];
+                renderImgMarks();
+            } catch (e) {
+                imgMarkers = [];
+                renderImgMarks();
+            }
+        }
+
+        async function saveImgMarks() {
+            const f = imgs[lbi];
+            const path = cur ? cur + '/' + f.name : f.name;
+            await fetch(`/api/markers/save?path=${encodeURIComponent(path)}`, {
+                method: 'POST',
+                body: JSON.stringify({ markers: imgMarkers })
+            });
+        }
+
+        function addImgMark() {
+            const label = prompt('请输入图片标注名称:', '');
+            if (label === null) return;
+            imgMarkers.push({ time: 0, label: label || '未命名标注' });
+            renderImgMarks();
+            saveImgMarks();
+        }
+
+        function renderImgMarks() {
+            const list = $('#imgMarkList');
+            if (imgMarkers.length === 0) {
+                list.innerHTML = '';
+                return;
+            }
+            list.innerHTML = imgMarkers.map((m, i) => `
+                <div class="img-tag">
+                    <span>${esc(m.label)}</span>
+                    <span class="tag-btn" onclick="editImgMark(${i})">📝</span>
+                    <span class="tag-btn" onclick="delImgMark(${i})">✕</span>
+                </div>
+            `).join('');
+        }
+
+        function editImgMark(i) {
+            const newLabel = prompt('修改图片标注名称:', imgMarkers[i].label);
+            if (newLabel === null) return;
+            imgMarkers[i].label = newLabel || '未命名标注';
+            renderImgMarks();
+            saveImgMarks();
+        }
+
+        function delImgMark(i) {
+            imgMarkers.splice(i, 1);
+            renderImgMarks();
+            saveImgMarks();
         }
 
         // 旋转
@@ -2216,7 +2326,16 @@
 
         // === 键盘 ===
         document.addEventListener('keydown', e => {
-            if ($('#lb').classList.contains('show')) { if (e.key === 'ArrowLeft') lbGo(-1); if (e.key === 'ArrowRight') lbGo(1); if (e.key === 'Escape') closeLB(); }
+            if ($('#lb').classList.contains('show')) {
+                const k = e.key.toLowerCase();
+                if (e.key === 'ArrowLeft') lbGo(-1);
+                if (e.key === 'ArrowRight') lbGo(1);
+                if (k === 'r') lbRot(90);
+                if (k === 'f' || e.key === 'Enter') lbToggleFull();
+                if (k === ' ') { e.preventDefault(); lbTogglePlay(); }
+                if (k === 'm') addImgMark();
+                if (e.key === 'Escape') closeLB();
+            }
             if ($('#yt').classList.contains('show')) {
                 const k = e.key.toLowerCase();
                 if (k === 'r') rotateVid();
