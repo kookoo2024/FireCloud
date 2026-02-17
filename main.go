@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"image"
 	"image/color"
-	"image/png"
 	"io"
 	"net/http"
 	"net/url"
@@ -54,6 +53,37 @@ type Marker struct {
 }
 type MarkersResponse struct {
 	Markers []Marker `json:"markers"`
+}
+
+// ===== 备课系统数据结构 =====
+type SlideItem struct {
+	Type        string  `json:"type"`        // "media", "text", "marker"
+	Path        string  `json:"path"`        // 相对路径
+	Content     string  `json:"content"`     // 文本内容或显示名称
+	StartTime   float64 `json:"startTime"`   // 书签点开始时间（秒）
+	MarkerLabel string  `json:"markerLabel"` // 书签点标签名
+}
+
+type Slide struct {
+	Name     string                 `json:"name"`
+	Template string                 `json:"template"`
+	Slots    map[string]interface{} `json:"slots"`
+}
+
+type LessonPlan struct {
+	Name    string  `json:"name"`
+	Slides  []Slide `json:"slides"`
+	Updated int64   `json:"updated"`
+}
+
+// 目录树节点
+type TreeNode struct {
+	Name     string     `json:"name"`
+	Path     string     `json:"path"`
+	IsDir    bool       `json:"isDir"`
+	Tags     []string   `json:"tags"`
+	Markers  []Marker   `json:"markers,omitempty"`
+	Children []TreeNode `json:"children,omitempty"`
 }
 
 func main() {
@@ -149,6 +179,21 @@ func startServer() {
 	mux.HandleFunc("/api/status", handleStatus)
 	mux.HandleFunc("/api/markers/get", handleGetMarkers)
 	mux.HandleFunc("/api/markers/save", handleSaveMarkers)
+
+	// --- 备课系统 API ---
+	mux.HandleFunc("/api/tags/getAll", handleGetAllTags)
+	mux.HandleFunc("/api/tags/save", handleSaveFileTags)
+	mux.HandleFunc("/api/lesson/save", handleSaveLesson)
+	mux.HandleFunc("/api/lesson/list", handleListLessons)
+	mux.HandleFunc("/api/lesson/get", handleGetLesson)
+	mux.HandleFunc("/api/tree", handleGetTree)
+
+	mux.HandleFunc("/lesson", func(w http.ResponseWriter, r *http.Request) {
+		data, _ := staticFS.ReadFile("static/lesson.html")
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.Write(data)
+	})
+
 	mux.HandleFunc("/files/", handleFileServe)
 	mux.HandleFunc("/", handleMain)
 
@@ -397,6 +442,213 @@ func handleSaveMarkers(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("OK"))
 }
 
+// ===== 备课系统 API 实现 =====
+
+// 获取全量标签（合并书签索引）
+func handleGetAllTags(w http.ResponseWriter, r *http.Request) {
+	tagFile := filepath.Join(rootDir, ".fire_tags.json")
+	markerFile := filepath.Join(rootDir, ".fire_markers.json")
+
+	db := make(map[string][]string)
+
+	// 1. 读取标签文件
+	if data, err := os.ReadFile(tagFile); err == nil {
+		json.Unmarshal(data, &db)
+	}
+
+	// 2. 读取书签文件（作为自动标签 "已标注"）
+	if data, err := os.ReadFile(markerFile); err == nil {
+		var mdb map[string]interface{}
+		if err := json.Unmarshal(data, &mdb); err == nil {
+			for path := range mdb {
+				db[path] = append(db[path], "已标注")
+			}
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(db)
+}
+
+// 获取带标签的目录树
+func handleGetTree(w http.ResponseWriter, r *http.Request) {
+	tagFile := filepath.Join(rootDir, ".fire_tags.json")
+	markerFile := filepath.Join(rootDir, ".fire_markers.json")
+
+	tagDB := make(map[string][]string)
+	if data, err := os.ReadFile(tagFile); err == nil {
+		json.Unmarshal(data, &tagDB)
+	}
+
+	markerDB := make(map[string][]Marker)
+	if data, err := os.ReadFile(markerFile); err == nil {
+		json.Unmarshal(data, &markerDB)
+		for path := range markerDB {
+			tagDB[path] = append(tagDB[path], "已标注")
+		}
+	}
+
+	tree := buildTree(rootDir, "", tagDB, markerDB)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(tree)
+}
+
+func isMediaFile(name string) bool {
+	ext := strings.ToLower(filepath.Ext(name))
+	mediaExts := map[string]bool{
+		".jpg": true, ".jpeg": true, ".png": true, ".gif": true, ".webp": true, ".bmp": true,
+		".mp4": true, ".webm": true, ".mkv": true, ".mov": true, ".avi": true,
+	}
+	return mediaExts[ext]
+}
+
+func buildTree(basePath, relPath string, tagDB map[string][]string, markerDB map[string][]Marker) []TreeNode {
+	absPath := filepath.Join(basePath, filepath.FromSlash(relPath))
+	entries, err := os.ReadDir(absPath)
+	if err != nil {
+		return nil
+	}
+
+	var nodes []TreeNode
+	for _, e := range entries {
+		name := e.Name()
+		if strings.HasPrefix(name, ".") {
+			continue
+		}
+
+		childRelPath := name
+		if relPath != "" {
+			childRelPath = relPath + "/" + name
+		}
+
+		if e.IsDir() {
+			children := buildTree(basePath, childRelPath, tagDB, markerDB)
+			if len(children) > 0 {
+				node := TreeNode{
+					Name:     name,
+					Path:     childRelPath,
+					IsDir:    true,
+					Tags:     tagDB[childRelPath],
+					Children: children,
+				}
+				nodes = append(nodes, node)
+			}
+		} else {
+			if !isMediaFile(name) {
+				continue
+			}
+			node := TreeNode{
+				Name:    name,
+				Path:    childRelPath,
+				IsDir:   false,
+				Tags:    tagDB[childRelPath],
+				Markers: markerDB[childRelPath],
+			}
+			nodes = append(nodes, node)
+		}
+	}
+
+	sort.Slice(nodes, func(i, j int) bool {
+		if nodes[i].IsDir != nodes[j].IsDir {
+			return nodes[i].IsDir
+		}
+		return strings.ToLower(nodes[i].Name) < strings.ToLower(nodes[j].Name)
+	})
+
+	return nodes
+}
+
+// 保存文件标签
+func handleSaveFileTags(w http.ResponseWriter, r *http.Request) {
+	tagFile := filepath.Join(rootDir, ".fire_tags.json")
+	var newTags map[string][]string
+	if err := json.NewDecoder(r.Body).Decode(&newTags); err != nil {
+		http.Error(w, "Bad JSON", 400)
+		return
+	}
+
+	db := make(map[string][]string)
+	if data, err := os.ReadFile(tagFile); err == nil {
+		json.Unmarshal(data, &db)
+	}
+
+	for k, v := range newTags {
+		if len(v) == 0 {
+			delete(db, k)
+		} else {
+			db[k] = v
+		}
+	}
+
+	data, _ := json.Marshal(db)
+	os.WriteFile(tagFile, data, 0644)
+	if runtime.GOOS == "windows" {
+		exec.Command("attrib", "+h", tagFile).Run()
+	}
+	w.Write([]byte("OK"))
+}
+
+// 保存备课方案
+func handleSaveLesson(w http.ResponseWriter, r *http.Request) {
+	var plan LessonPlan
+	if err := json.NewDecoder(r.Body).Decode(&plan); err != nil {
+		http.Error(w, "Bad JSON", 400)
+		return
+	}
+	if plan.Name == "" {
+		http.Error(w, "Name required", 400)
+		return
+	}
+	plan.Updated = time.Now().Unix()
+
+	lessonDir := filepath.Join(rootDir, ".fire_lessons")
+	os.MkdirAll(lessonDir, 0755)
+	if runtime.GOOS == "windows" {
+		exec.Command("attrib", "+h", lessonDir).Run()
+	}
+
+	fileName := filepath.Join(lessonDir, plan.Name+".json")
+	data, _ := json.Marshal(plan)
+	os.WriteFile(fileName, data, 0644)
+	w.Write([]byte("OK"))
+}
+
+// 列出所有备课方案
+func handleListLessons(w http.ResponseWriter, r *http.Request) {
+	lessonDir := filepath.Join(rootDir, ".fire_lessons")
+	entries, err := os.ReadDir(lessonDir)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte("[]"))
+		return
+	}
+	var list []string
+	for _, e := range entries {
+		if strings.HasSuffix(e.Name(), ".json") {
+			list = append(list, strings.TrimSuffix(e.Name(), ".json"))
+		}
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(list)
+}
+
+// 获取特定备课方案
+func handleGetLesson(w http.ResponseWriter, r *http.Request) {
+	name := r.URL.Query().Get("name")
+	if name == "" {
+		http.Error(w, "Name required", 400)
+		return
+	}
+	filePath := filepath.Join(rootDir, ".fire_lessons", name+".json")
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		http.Error(w, "Not found", 404)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(data)
+}
+
 func getLocalIP() string {
 	addrs, err := net.InterfaceAddrs()
 	if err != nil {
@@ -454,13 +706,15 @@ func openBrowser(url string) {
 	cmd.Start()
 }
 
-// ===== 生成托盘图标（标准的 16x16 像素，提高 Windows 兼容性） =====
+// ===== 生成托盘图标（16x16 像素 ICO 格式，Windows 兼容） =====
 func createFireIcon() []byte {
 	const sz = 16
+
+	// 创建 32 位 RGBA 图像
 	img := image.NewRGBA(image.Rect(0, 0, sz, sz))
 
 	// 金黄色星星
-	starColor := color.RGBA{255, 215, 0, 255}
+	starColor := color.RGBA{255, 180, 0, 255}
 
 	cx, cy := float64(sz)/2, float64(sz)/2
 
@@ -482,19 +736,73 @@ func createFireIcon() []byte {
 		points[i][1] = cy + r*float64(sin(rad))
 	}
 
+	// 填充五角星（不填充背景，保持透明）
 	for y := 0; y < sz; y++ {
 		for x := 0; x < sz; x++ {
-			if isInsidePolygon(float64(x), float64(y), points) {
+			if isInsidePolygon(float64(x)+0.5, float64(y)+0.5, points) {
 				img.Set(x, y, starColor)
-			} else {
-				img.Set(x, y, color.Transparent)
 			}
 		}
 	}
 
-	var buf bytes.Buffer
-	png.Encode(&buf, img)
-	return buf.Bytes()
+	// 构建 ICO 格式
+	// ICO 头: 6 字节
+	// 图像目录: 16 字节
+	// 图像数据: BMP 格式
+
+	var ico bytes.Buffer
+
+	// ICO 头
+	ico.Write([]byte{0, 0}) // Reserved
+	ico.Write([]byte{1, 0}) // Type: 1 = ICO
+	ico.Write([]byte{1, 0}) // Number of images
+
+	// 图像目录项
+	ico.WriteByte(16)        // Width
+	ico.WriteByte(16)        // Height
+	ico.WriteByte(0)         // Color palette
+	ico.WriteByte(0)         // Reserved
+	ico.Write([]byte{1, 0})  // Color planes
+	ico.Write([]byte{32, 0}) // Bits per pixel
+
+	// BMP 数据大小 (40 字节头 + 16*16*4 字节像素数据)
+	bmpDataSize := 40 + sz*sz*4
+	sizeBytes := make([]byte, 4)
+	sizeBytes[0] = byte(bmpDataSize)
+	sizeBytes[1] = byte(bmpDataSize >> 8)
+	sizeBytes[2] = byte(bmpDataSize >> 16)
+	sizeBytes[3] = byte(bmpDataSize >> 24)
+	ico.Write(sizeBytes)
+
+	// 图像数据偏移 (6 + 16 = 22)
+	offsetBytes := []byte{22, 0, 0, 0}
+	ico.Write(offsetBytes)
+
+	// BMP 信息头 (40 字节)
+	ico.Write([]byte{40, 0, 0, 0}) // Header size
+	ico.Write([]byte{16, 0, 0, 0}) // Width
+	ico.Write([]byte{32, 0, 0, 0}) // Height (doubled for ICO)
+	ico.Write([]byte{1, 0})        // Planes
+	ico.Write([]byte{32, 0})       // Bits per pixel
+	ico.Write([]byte{0, 0, 0, 0})  // Compression
+	ico.Write([]byte{0, 0, 0, 0})  // Image size (can be 0 for uncompressed)
+	ico.Write([]byte{0, 0, 0, 0})  // X pixels per meter
+	ico.Write([]byte{0, 0, 0, 0})  // Y pixels per meter
+	ico.Write([]byte{0, 0, 0, 0})  // Colors used
+	ico.Write([]byte{0, 0, 0, 0})  // Important colors
+
+	// 像素数据 (从下到上，从左到右)
+	for y := sz - 1; y >= 0; y-- {
+		for x := 0; x < sz; x++ {
+			c := img.RGBAAt(x, y)
+			ico.WriteByte(c.B)
+			ico.WriteByte(c.G)
+			ico.WriteByte(c.R)
+			ico.WriteByte(c.A)
+		}
+	}
+
+	return ico.Bytes()
 }
 
 // 简单的三角函数实现

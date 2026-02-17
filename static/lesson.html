@@ -1,0 +1,1944 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FireLesson - 智能备课系统</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg0: #0a0a0f;
+            --bg1: #111119;
+            --bg2: #1a1a25;
+            --bg3: #242434;
+            --bg4: #2e2e42;
+            --accent: #7c6aff;
+            --accent2: #a78bfa;
+            --glow: rgba(124, 106, 255, .2);
+            --t1: #eeeef2;
+            --t2: #97979f;
+            --t3: #55555f;
+            --border: rgba(255, 255, 255, .06);
+            --green: #34d399;
+            --red: #f87171;
+            --r: 12px;
+            --rs: 8px;
+            --tr: .2s cubic-bezier(.4, 0, .2, 1);
+        }
+
+        [data-theme="light"] {
+            --bg0: #f3f4f6;
+            --bg1: #ffffff;
+            --bg2: #e5e7eb;
+            --bg3: #d1d5db;
+            --bg4: #9ca3af;
+            --t1: #111827;
+            --t2: #4b5563;
+            --t3: #6b7280;
+            --border: rgba(0, 0, 0, 0.08);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg0);
+            color: var(--t1);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            height: 56px;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            background: var(--bg1);
+            border-bottom: 1px solid var(--border);
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+
+        .logo {
+            font-size: 18px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #ff6b6b, var(--accent));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .workspace {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        .col {
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid var(--border);
+            background: var(--bg1);
+        }
+
+        .col-hd {
+            padding: 12px 16px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--t2);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        #col-tree { width: 260px; }
+        #col-res { flex: 1; background: var(--bg0); }
+        #col-menu { width: 400px; border-right: none; background: var(--bg1); }
+
+        .tree { overflow-y: auto; flex: 1; padding: 8px; }
+
+        .tree-node {
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all var(--tr);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--t2);
+        }
+
+        .tree-node:hover { background: var(--bg2); color: var(--t1); }
+        .tree-node.act { background: var(--glow); color: var(--accent); font-weight: 600; }
+
+        .tree-node .icon { font-size: 14px; flex-shrink: 0; }
+        .tree-node .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .tree-node .tags { display: flex; gap: 2px; flex-shrink: 0; }
+        .tree-node .tag {
+            font-size: 9px; padding: 1px 4px; background: var(--accent);
+            color: #fff; border-radius: 3px; max-width: 50px;
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+
+        .tree-node .toggle {
+            width: 16px; height: 16px; display: flex;
+            align-items: center; justify-content: center;
+            font-size: 10px; opacity: .5; transition: transform .2s;
+        }
+        .tree-node .toggle.expanded { transform: rotate(90deg); }
+
+        .tree-children { padding-left: 16px; display: none; }
+        .tree-children.show { display: block; }
+
+        .res-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 8px;
+            padding: 10px;
+            overflow-y: auto;
+        }
+
+        .res-item {
+            background: var(--bg2);
+            border-radius: var(--rs);
+            padding: 5px;
+            cursor: move;
+            transition: all var(--tr);
+            border: 1px solid transparent;
+            user-select: none;
+        }
+
+        .res-item:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+        }
+
+        .res-thumb {
+            aspect-ratio: 16/9;
+            background: var(--bg3);
+            border-radius: 4px;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            overflow: hidden;
+        }
+
+        .res-thumb img { width: 100%; height: 100%; object-fit: cover; }
+        .res-name { font-size: 10px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        .video-markers { margin-top: 3px; display: flex; flex-direction: column; gap: 2px; }
+
+        .marker-item {
+            display: flex; align-items: center; gap: 3px;
+            padding: 2px 4px; background: var(--bg3);
+            border-radius: 3px; cursor: grab; font-size: 9px;
+            transition: all .2s;
+        }
+
+        .marker-item:hover { background: var(--accent); color: #fff; }
+        .marker-item:active { cursor: grabbing; }
+
+        .marker-time { font-weight: 600; color: var(--accent); font-family: monospace; }
+        .marker-item:hover .marker-time { color: #fff; }
+
+        .marker-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+        .btn {
+            padding: 8px 16px; border-radius: var(--rs);
+            border: 1px solid var(--border); background: var(--bg3);
+            color: var(--t1); cursor: pointer; font-size: 12px;
+            font-weight: 500; transition: all .2s;
+        }
+
+        .btn.primary { background: var(--accent); border: none; color: #fff; }
+        .btn:hover { opacity: .9; }
+        .btn-sm { padding: 4px 8px; font-size: 11px; }
+
+        .tag-filter {
+            padding: 6px 10px; display: flex; flex-wrap: wrap; gap: 3px;
+            background: var(--bg1); border-bottom: 1px solid var(--border);
+        }
+
+        .tag-filter .tag {
+            font-size: 9px; padding: 2px 6px; background: var(--bg3);
+            color: var(--t2); border-radius: 4px; cursor: pointer;
+            transition: all .2s;
+        }
+
+        .tag-filter .tag:hover { background: var(--accent); color: #fff; }
+        .tag-filter .tag.act { background: var(--accent); color: #fff; }
+
+        .slide-tabs {
+            display: flex; gap: 4px; padding: 8px 12px;
+            background: var(--bg0); border-bottom: 1px solid var(--border);
+            overflow-x: auto; flex-shrink: 0;
+        }
+
+        .slide-tab {
+            padding: 6px 12px; background: var(--bg2); border-radius: 6px;
+            cursor: pointer; font-size: 12px; color: var(--t2);
+            transition: all .2s; white-space: nowrap; display: flex;
+            align-items: center; gap: 6px;
+        }
+
+        .slide-tab:hover { background: var(--bg3); color: var(--t1); }
+        .slide-tab.act { background: var(--accent); color: #fff; }
+
+        .slide-tab .num {
+            width: 18px; height: 18px; border-radius: 50%;
+            background: rgba(255,255,255,0.2); display: flex;
+            align-items: center; justify-content: center; font-size: 10px;
+        }
+
+        .slide-tab.act .num { background: rgba(255,255,255,0.3); }
+        .slide-tab .del { opacity: 0; font-size: 12px; margin-left: 4px; }
+        .slide-tab:hover .del { opacity: 0.5; }
+        .slide-tab .del:hover { opacity: 1; color: var(--red); }
+
+        .add-slide-btn {
+            padding: 6px 12px; background: transparent; border: 1px dashed var(--border);
+            border-radius: 6px; cursor: pointer; font-size: 12px;
+            color: var(--t3); transition: all .2s;
+        }
+
+        .add-slide-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+        .template-selector {
+            padding: 8px 12px; background: var(--bg2);
+            border-bottom: 1px solid var(--border); display: flex;
+            gap: 6px; overflow-x: auto;
+        }
+
+        .template-btn {
+            padding: 6px 10px; background: var(--bg3); border-radius: 6px;
+            cursor: pointer; font-size: 11px; color: var(--t2);
+            transition: all .2s; white-space: nowrap; display: flex;
+            flex-direction: column; align-items: center; gap: 4px;
+            border: 2px solid transparent;
+        }
+
+        .template-btn:hover { background: var(--bg4); color: var(--t1); }
+        .template-btn.act { border-color: var(--accent); color: var(--accent); }
+
+        .template-btn .t-icon { font-size: 16px; }
+        .template-btn .t-name { font-size: 9px; }
+
+        .slide-editor {
+            flex: 1; overflow-y: auto; padding: 12px;
+        }
+
+        .slot-container {
+            display: flex; flex-direction: column; gap: 10px;
+        }
+
+        .slot-item {
+            background: var(--bg2); border-radius: var(--rs);
+            border: 2px dashed var(--border); padding: 12px;
+            transition: all .3s; position: relative;
+        }
+
+        .slot-item:hover { border-color: var(--accent); }
+        .slot-item.filled { border-style: solid; border-color: var(--accent); }
+
+        .slot-label {
+            font-size: 11px; color: var(--t3); margin-bottom: 8px;
+            display: flex; align-items: center; gap: 6px;
+        }
+
+        .slot-label .step-num {
+            width: 18px; height: 18px; border-radius: 50%;
+            background: var(--accent); color: #fff;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 10px; font-weight: 600;
+        }
+
+        .slot-content {
+            min-height: 60px; display: flex;
+            align-items: center; justify-content: center;
+        }
+
+        .slot-empty {
+            color: var(--t3); font-size: 12px;
+            text-align: center; padding: 20px;
+        }
+
+        .slot-filled {
+            width: 100%; display: flex; gap: 10px; align-items: center;
+        }
+
+        .slot-filled .s-thumb {
+            width: 50px; aspect-ratio: 16/9; background: var(--bg3);
+            border-radius: 4px; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px; overflow: hidden;
+        }
+
+        .slot-filled .s-thumb img { width: 100%; height: 100%; object-fit: cover; }
+        .slot-filled .s-info { flex: 1; min-width: 0; }
+        .slot-filled .s-name { font-size: 11px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .slot-filled .s-time { font-size: 10px; color: var(--t2); margin-top: 2px; }
+
+        .slot-text textarea {
+            width: 100%; background: transparent; border: none;
+            color: var(--t1); font-size: 13px; resize: none;
+            outline: none; line-height: 1.5; min-height: 40px;
+        }
+
+        .slot-ctrls {
+            position: absolute; top: -8px; right: 8px;
+            display: none; gap: 3px; z-index: 10;
+        }
+
+        .slot-item:hover .slot-ctrls { display: flex; }
+
+        .ctrl-btn {
+            width: 20px; height: 20px; border-radius: 50%;
+            background: var(--bg3); border: 1px solid var(--border);
+            color: var(--t2); display: flex; align-items: center;
+            justify-content: center; font-size: 10px; cursor: pointer;
+        }
+
+        .ctrl-btn:hover { background: var(--accent); color: #fff; }
+
+        .mdl-ov {
+            position: fixed; inset: 0; background: rgba(0, 0, 0, .6);
+            backdrop-filter: blur(4px); display: none;
+            align-items: center; justify-content: center; z-index: 100;
+        }
+
+        .mdl-ov.show { display: flex; }
+
+        .mdl {
+            background: var(--bg2); border-radius: var(--r);
+            border: 1px solid var(--border); padding: 24px;
+            width: 400px; box-shadow: 0 20px 60px rgba(0, 0, 0, .5);
+        }
+
+        .mdl h3 { margin-bottom: 20px; font-size: 16px; }
+
+        .mdl input {
+            width: 100%; padding: 12px; background: var(--bg0);
+            border: 1px solid var(--border); color: var(--t1);
+            border-radius: var(--rs); margin-bottom: 20px; outline: none;
+        }
+
+        .mdl-acts { display: flex; gap: 12px; justify-content: flex-end; }
+
+        .preview-overlay {
+            position: fixed; inset: 0; background: rgba(0, 0, 0, .9);
+            z-index: 200; display: none; align-items: center;
+            justify-content: center; flex-direction: column; gap: 20px;
+        }
+
+        .preview-overlay.show { display: flex; }
+
+        .preview-overlay img, .preview-overlay video {
+            max-width: 90vw; max-height: 80vh; border-radius: 8px;
+        }
+
+        .preview-overlay .close-btn {
+            position: absolute; top: 20px; right: 20px;
+            padding: 10px 20px; background: rgba(255, 255, 255, .1);
+            border: 1px solid rgba(255, 255, 255, .2);
+            color: #fff; border-radius: 20px; cursor: pointer;
+        }
+
+        .empty-hint { color: var(--t3); text-align: center; padding: 20px; font-size: 12px; }
+    </style>
+</head>
+
+<body data-theme="dark">
+    <div class="header">
+        <div style="display:flex; align-items:center; gap:16px">
+            <div class="logo">✨ FireLesson</div>
+            <div id="plan-title" style="font-size:14px; font-weight:600; opacity:.8">未命名方案</div>
+        </div>
+        <div style="display:flex; gap:10px">
+            <button class="btn" onclick="savePlan()">💾 保存</button>
+            <button class="btn" onclick="showLoad()">📂 加载</button>
+            <button class="btn primary" onclick="startDemo()">📺 演示模式</button>
+        </div>
+    </div>
+
+    <div class="workspace">
+        <div class="col" id="col-tree">
+            <div class="col-hd">
+                <span>📁 资源目录</span>
+                <button class="btn btn-sm" onclick="refreshTree()">🔄</button>
+            </div>
+            <div class="tree" id="file-tree"></div>
+        </div>
+
+        <div class="col" id="col-res">
+            <div class="col-hd">
+                <span id="res-title">素材库</span>
+                <div style="font-size:11px; opacity:.5">拖拽到右侧槽位</div>
+            </div>
+            <div class="tag-filter" id="tag-filter"></div>
+            <div class="res-grid" id="res-grid"></div>
+        </div>
+
+        <div class="col" id="col-menu">
+            <div class="col-hd">
+                <span>🎞️ 幻灯片</span>
+                <button class="btn btn-sm" onclick="clearPlan()">清空</button>
+            </div>
+            <div class="slide-tabs" id="slide-tabs"></div>
+            <div class="template-selector" id="template-selector"></div>
+            <div class="slide-editor" id="slide-editor"></div>
+        </div>
+    </div>
+
+    <div class="mdl-ov" id="planM">
+        <div class="mdl">
+            <h3 id="mdlTitle">加载备课方案</h3>
+            <div id="planList" style="max-height:300px; overflow-y:auto; margin-bottom:20px"></div>
+            <div class="mdl-acts">
+                <button class="btn" onclick="closeM()">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="mdl-ov" id="tagM">
+        <div class="mdl">
+            <h3>给文件打标签</h3>
+            <p id="targetFile" style="font-size:12px; color:var(--t2); margin-bottom:10px; word-break:break-all"></p>
+            <input type="text" id="tagInput" placeholder="输入标签，多个用空格分隔">
+            <div class="mdl-acts">
+                <button class="btn" onclick="closeM()">取消</button>
+                <button class="btn primary" onclick="doSaveTag()">确定</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="preview-overlay" id="previewOverlay">
+        <button class="close-btn" onclick="closePreview()">✕ 关闭</button>
+        <div id="previewContent"></div>
+    </div>
+
+    <script>
+        const $ = s => document.querySelector(s);
+
+        const TEMPLATES = {
+            simple: {
+                name: '简单列表',
+                icon: '📝',
+                layout: 'list',
+                slots: [
+                    { id: 'items', type: 'list', label: '内容列表', multiple: true }
+                ]
+            },
+            titleMedia: {
+                name: '标题+媒体',
+                icon: '🖼️',
+                layout: 'vertical',
+                slots: [
+                    { id: 'title', type: 'text', label: '标题' },
+                    { id: 'media', type: 'media', label: '图片/视频' }
+                ]
+            },
+            titleMediaSummary: {
+                name: '完整模板',
+                icon: '📋',
+                layout: 'vertical',
+                slots: [
+                    { id: 'title', type: 'text', label: '标题' },
+                    { id: 'media', type: 'media', label: '图片/视频' },
+                    { id: 'summary', type: 'text', label: '总结' }
+                ]
+            },
+            twoColumn: {
+                name: '双栏布局',
+                icon: '⬜⬜',
+                layout: 'horizontal',
+                slots: [
+                    { id: 'left', type: 'media', label: '左侧内容' },
+                    { id: 'right', type: 'media', label: '右侧内容' }
+                ]
+            },
+            fullMedia: {
+                name: '全屏媒体',
+                icon: '🎬',
+                layout: 'full',
+                slots: [
+                    { id: 'media', type: 'media', label: '全屏图片/视频' }
+                ]
+            },
+            titleTwoMedia: {
+                name: '标题+双媒体',
+                icon: '📊',
+                layout: 'vertical',
+                slots: [
+                    { id: 'title', type: 'text', label: '标题' },
+                    { id: 'media1', type: 'media', label: '媒体1' },
+                    { id: 'media2', type: 'media', label: '媒体2' }
+                ]
+            }
+        };
+
+        let treeData = [];
+        let tagMap = {};
+        let currentPlan = { name: '', slides: [] };
+        let currentPath = '';
+        let currentTagFilter = '';
+        let currentSlideIndex = 0;
+        let expandedPaths = new Set();
+        let dragData = null;
+
+        window.onload = async () => {
+            await loadTree();
+            addSlide();
+        };
+
+        async function loadTree() {
+            try {
+                const r = await fetch('/api/tree');
+                treeData = await r.json();
+                await loadTagMap();
+                renderTree();
+                renderTagFilter();
+            } catch (e) { console.error('加载目录树失败', e); }
+        }
+
+        async function loadTagMap() {
+            try {
+                const r = await fetch('/api/tags/getAll');
+                tagMap = await r.json();
+            } catch (e) { tagMap = {}; }
+        }
+
+        async function refreshTree() {
+            await loadTree();
+            if (currentPath) renderRes();
+        }
+
+        function renderTree() {
+            const container = $('#file-tree');
+            container.innerHTML = renderTreeNodes(treeData, 0);
+        }
+
+        function renderTreeNodes(nodes, depth) {
+            if (!nodes || nodes.length === 0) return '';
+            return nodes.map(node => {
+                const isExpanded = expandedPaths.has(node.path);
+                const hasChildren = node.isDir && node.children && node.children.length > 0;
+                const tags = node.tags || [];
+                const icon = node.isDir ? (isExpanded ? '📂' : '📁') : getFileIcon(node.name);
+                
+                let html = `
+                    <div class="tree-node ${currentPath === node.path ? 'act' : ''}" 
+                         style="padding-left: ${12 + depth * 12}px"
+                         onclick="onTreeNodeClick(event, '${node.path}', ${node.isDir})">
+                        ${node.isDir ? `<span class="toggle ${isExpanded ? 'expanded' : ''}">${hasChildren ? '▶' : ''}</span>` : '<span style="width:16px"></span>'}
+                        <span class="icon">${icon}</span>
+                        <span class="name" title="${node.path}">${node.name}</span>
+                        ${tags.length > 0 ? `<div class="tags">${tags.slice(0, 2).map(t => `<span class="tag">${t}</span>`).join('')}</div>` : ''}
+                    </div>
+                `;
+                
+                if (node.isDir && isExpanded) {
+                    html += `<div class="tree-children show">${renderTreeNodes(node.children, depth + 1)}</div>`;
+                }
+                
+                return html;
+            }).join('');
+        }
+
+        function getFileIcon(name) {
+            const ext = name.split('.').pop().toLowerCase();
+            const icons = {
+                'mp4': '🎬', 'webm': '🎬', 'mkv': '🎬', 'mov': '🎬', 'avi': '🎬',
+                'jpg': '🖼️', 'jpeg': '🖼️', 'png': '🖼️', 'gif': '🖼️', 'webp': '🖼️', 'bmp': '🖼️'
+            };
+            return icons[ext] || '📄';
+        }
+
+        function onTreeNodeClick(event, path, isDir) {
+            event.stopPropagation();
+            if (isDir) {
+                if (expandedPaths.has(path)) expandedPaths.delete(path);
+                else expandedPaths.add(path);
+                renderTree();
+            }
+            currentPath = path;
+            renderTree();
+            renderRes();
+        }
+
+        function renderTagFilter() {
+            const container = $('#tag-filter');
+            const allTags = new Set();
+            Object.values(tagMap).forEach(tags => tags.forEach(t => allTags.add(t)));
+            
+            let html = `<span class="tag ${currentTagFilter === '' ? 'act' : ''}" onclick="filterByTag('')">全部</span>`;
+            Array.from(allTags).sort().forEach(tag => {
+                html += `<span class="tag ${currentTagFilter === tag ? 'act' : ''}" onclick="filterByTag('${tag}')">${tag}</span>`;
+            });
+            container.innerHTML = html;
+        }
+
+        function filterByTag(tag) {
+            currentTagFilter = tag;
+            renderTagFilter();
+            renderRes();
+        }
+
+        function renderRes() {
+            const grid = $('#res-grid');
+            const title = $('#res-title');
+            
+            if (!currentPath) {
+                grid.innerHTML = '<div class="empty-hint">请从左侧选择文件夹</div>';
+                title.innerText = '素材库';
+                return;
+            }
+
+            const node = findNode(treeData, currentPath);
+            if (!node) { grid.innerHTML = '<div class="empty-hint">未找到资源</div>'; return; }
+
+            let files = [];
+            if (node.isDir) {
+                files = (node.children || []).filter(n => !n.isDir);
+                title.innerText = `📁 ${node.name}`;
+            } else {
+                files = [node];
+                title.innerText = `📄 ${node.name}`;
+            }
+
+            if (currentTagFilter) {
+                files = files.filter(f => f.tags && f.tags.includes(currentTagFilter));
+            }
+
+            if (files.length === 0) { grid.innerHTML = '<div class="empty-hint">暂无素材</div>'; return; }
+
+            grid.innerHTML = files.map(f => {
+                const isVid = /\.(mp4|webm|mkv|mov)$/i.test(f.name);
+                const isImg = /\.(jpg|jpeg|png|gif|webp|bmp)$/i.test(f.name);
+                const u = `/files/${encodeURIComponent(f.path).replace(/%2F/g, '/')}`;
+                const markers = f.markers || [];
+                
+                let markersHtml = '';
+                if (isVid && markers.length > 0) {
+                    markersHtml = `
+                        <div class="video-markers">
+                            ${markers.map(m => `
+                                <div class="marker-item" draggable="true" 
+                                     ondragstart="onDragMarker(event, '${f.path}', '${f.name}', ${m.time}, '${m.label.replace(/'/g, "\\'")}')">
+                                    <span class="marker-time">${formatTime(m.time)}</span>
+                                    <span class="marker-label">${m.label}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                }
+                
+                return `
+                    <div class="res-item" draggable="true" ondragstart="onDragFile(event, '${f.path}', '${f.name}')">
+                        <div class="res-thumb" onclick="previewFile('${f.path}', ${isVid})">
+                            ${isVid ? '🎬' : isImg ? `<img src="${u}" loading="lazy">` : '📄'}
+                        </div>
+                        <div class="res-name" title="${f.name}">${f.name}</div>
+                        ${markersHtml}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function findNode(nodes, path) {
+            for (const node of nodes) {
+                if (node.path === path) return node;
+                if (node.children) {
+                    const found = findNode(node.children, path);
+                    if (found) return found;
+                }
+            }
+            return null;
+        }
+
+        function formatTime(seconds) {
+            const m = Math.floor(seconds / 60);
+            const s = Math.floor(seconds % 60);
+            return `${m}:${s.toString().padStart(2, '0')}`;
+        }
+
+        function previewFile(path, isVideo) {
+            const overlay = $('#previewOverlay');
+            const content = $('#previewContent');
+            const u = `/files/${encodeURIComponent(path).replace(/%2F/g, '/')}`;
+            
+            if (isVideo) {
+                content.innerHTML = `<video src="${u}" controls autoplay style="max-width:90vw; max-height:80vh; border-radius:8px"></video>`;
+            } else {
+                content.innerHTML = `<img src="${u}" style="max-width:90vw; max-height:80vh; border-radius:8px">`;
+            }
+            overlay.classList.add('show');
+        }
+
+        function closePreview() {
+            $('#previewOverlay').classList.remove('show');
+            $('#previewContent').innerHTML = '';
+        }
+
+        function renderSlideTabs() {
+            const container = $('#slide-tabs');
+            let html = currentPlan.slides.map((slide, i) => `
+                <div class="slide-tab ${i === currentSlideIndex ? 'act' : ''}" onclick="selectSlide(${i})">
+                    <span class="num">${i + 1}</span>
+                    <span>${slide.name || '幻灯片 ' + (i + 1)}</span>
+                    ${currentPlan.slides.length > 1 ? `<span class="del" onclick="event.stopPropagation(); deleteSlide(${i})">✕</span>` : ''}
+                </div>
+            `).join('');
+            html += `<div class="add-slide-btn" onclick="addSlide()">+ 新幻灯片</div>`;
+            container.innerHTML = html;
+        }
+
+        function selectSlide(index) {
+            currentSlideIndex = index;
+            renderSlideTabs();
+            renderTemplateSelector();
+            renderSlideEditor();
+        }
+
+        function addSlide() {
+            const newIndex = currentPlan.slides.length;
+            currentPlan.slides.push({
+                name: `幻灯片 ${newIndex + 1}`,
+                template: 'simple',
+                slots: { items: [] }
+            });
+            selectSlide(newIndex);
+        }
+
+        function deleteSlide(index) {
+            if (currentPlan.slides.length <= 1) return;
+            currentPlan.slides.splice(index, 1);
+            if (currentSlideIndex >= currentPlan.slides.length) {
+                currentSlideIndex = currentPlan.slides.length - 1;
+            }
+            renderSlideTabs();
+            renderTemplateSelector();
+            renderSlideEditor();
+        }
+
+        function getCurrentSlide() {
+            return currentPlan.slides[currentSlideIndex];
+        }
+
+        function renderTemplateSelector() {
+            const container = $('#template-selector');
+            const slide = getCurrentSlide();
+            container.innerHTML = Object.entries(TEMPLATES).map(([key, tpl]) => `
+                <div class="template-btn ${slide.template === key ? 'act' : ''}" onclick="selectTemplate('${key}')">
+                    <span class="t-icon">${tpl.icon}</span>
+                    <span class="t-name">${tpl.name}</span>
+                </div>
+            `).join('');
+        }
+
+        function selectTemplate(templateKey) {
+            const slide = getCurrentSlide();
+            const oldSlots = slide.slots || {};
+            slide.template = templateKey;
+            
+            const template = TEMPLATES[templateKey];
+            slide.slots = {};
+            template.slots.forEach(slot => {
+                if (slot.multiple) {
+                    slide.slots[slot.id] = oldSlots[slot.id] || [];
+                } else {
+                    slide.slots[slot.id] = oldSlots[slot.id] || null;
+                }
+            });
+            
+            renderTemplateSelector();
+            renderSlideEditor();
+        }
+
+        function renderSlideEditor() {
+            const container = $('#slide-editor');
+            const slide = getCurrentSlide();
+            const template = TEMPLATES[slide.template];
+            
+            if (!template) {
+                container.innerHTML = '<div class="empty-hint">请选择模板</div>';
+                return;
+            }
+
+            let html = '<div class="slot-container">';
+            
+            template.slots.forEach((slot, idx) => {
+                const stepNum = idx + 1;
+                if (slot.multiple) {
+                    const items = slide.slots[slot.id] || [];
+                    html += `
+                        <div class="slot-item" ondragover="event.preventDefault()" ondrop="onSlotDrop(event, '${slot.id}', -1)">
+                            <div class="slot-label">
+                                <span class="step-num">${stepNum}</span>
+                                ${slot.label} (拖入添加)
+                            </div>
+                            <div class="slot-content">
+                                ${items.length === 0 ? '<div class="slot-empty">拖入素材或点击添加文字</div>' : 
+                                    items.map((item, i) => renderSlotItem(item, slot.id, i, stepNum)).join('')}
+                            </div>
+                        </div>
+                    `;
+                } else if (slot.type === 'text') {
+                    const content = slide.slots[slot.id] || '';
+                    html += `
+                        <div class="slot-item slot-text ${content ? 'filled' : ''}">
+                            <div class="slot-label">
+                                <span class="step-num">${stepNum}</span>
+                                ${slot.label}
+                            </div>
+                            <div class="slot-content">
+                                <textarea placeholder="输入${slot.label}..." 
+                                    oninput="updateSlotText('${slot.id}', this.value)">${content}</textarea>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    const item = slide.slots[slot.id];
+                    html += `
+                        <div class="slot-item ${item ? 'filled' : ''}" 
+                             ondragover="event.preventDefault()" 
+                             ondrop="onSlotDrop(event, '${slot.id}', 0)">
+                            <div class="slot-label">
+                                <span class="step-num">${stepNum}</span>
+                                ${slot.label}
+                            </div>
+                            <div class="slot-content">
+                                ${item ? renderSlotFilled(item, slot.id) : '<div class="slot-empty">拖入素材</div>'}
+                            </div>
+                            ${item ? `<div class="slot-ctrls"><button class="ctrl-btn" onclick="clearSlot('${slot.id}')">✕</button></div>` : ''}
+                        </div>
+                    `;
+                }
+            });
+            
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        function renderSlotItem(item, slotId, index, stepNum) {
+            if (item.type === 'text') {
+                return `
+                    <div class="slot-filled" style="margin-bottom:6px;">
+                        <span class="step-num" style="font-size:9px;">${stepNum}.${index + 1}</span>
+                        <div class="slot-text" style="flex:1;">
+                            <input type="text" value="${item.content}" 
+                                   onchange="updateListItem('${slotId}', ${index}, this.value)"
+                                   style="width:100%; background:var(--bg3); border:none; color:var(--t1); padding:6px; border-radius:4px;">
+                        </div>
+                        <button class="ctrl-btn" onclick="removeListItem('${slotId}', ${index})">✕</button>
+                    </div>
+                `;
+            } else {
+                const isVid = /\.(mp4|webm|mkv|mov)$/i.test(item.path);
+                const u = `/files/${encodeURIComponent(item.path).replace(/%2F/g, '/')}`;
+                return `
+                    <div class="slot-filled" style="margin-bottom:6px;">
+                        <span class="step-num" style="font-size:9px;">${stepNum}.${index + 1}</span>
+                        <div class="s-thumb">${isVid ? '🎬' : `<img src="${u}">`}</div>
+                        <div class="s-info">
+                            <div class="s-name">${item.content}</div>
+                            ${item.startTime !== undefined ? `<div class="s-time">从 ${formatTime(item.startTime)} 开始</div>` : ''}
+                        </div>
+                        <button class="ctrl-btn" onclick="removeListItem('${slotId}', ${index})">✕</button>
+                    </div>
+                `;
+            }
+        }
+
+        function renderSlotFilled(item, slotId) {
+            const isVid = /\.(mp4|webm|mkv|mov)$/i.test(item.path);
+            const u = `/files/${encodeURIComponent(item.path).replace(/%2F/g, '/')}`;
+            return `
+                <div class="slot-filled">
+                    <div class="s-thumb">${isVid ? '🎬' : `<img src="${u}">`}</div>
+                    <div class="s-info">
+                        <div class="s-name">${item.content}</div>
+                        ${item.startTime !== undefined ? `<div class="s-time">从 ${formatTime(item.startTime)} 开始</div>` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        function updateSlotText(slotId, value) {
+            getCurrentSlide().slots[slotId] = value;
+        }
+
+        function clearSlot(slotId) {
+            getCurrentSlide().slots[slotId] = null;
+            renderSlideEditor();
+        }
+
+        function removeListItem(slotId, index) {
+            getCurrentSlide().slots[slotId].splice(index, 1);
+            renderSlideEditor();
+        }
+
+        function updateListItem(slotId, index, value) {
+            getCurrentSlide().slots[slotId][index].content = value;
+        }
+
+        function onDragFile(e, path, name) {
+            dragData = { type: 'media', path, name };
+            e.dataTransfer.setData('text/plain', 'media');
+        }
+
+        function onDragMarker(e, path, name, time, label) {
+            dragData = { type: 'marker', path, name, startTime: time, markerLabel: label };
+            e.dataTransfer.setData('text/plain', 'marker');
+        }
+
+        function onSlotDrop(e, slotId, index) {
+            e.preventDefault();
+            if (!dragData) return;
+            
+            const slide = getCurrentSlide();
+            const template = TEMPLATES[slide.template];
+            const slot = template.slots.find(s => s.id === slotId);
+            
+            if (slot.multiple) {
+                if (!slide.slots[slotId]) slide.slots[slotId] = [];
+                if (dragData.type === 'media') {
+                    slide.slots[slotId].push({ type: 'media', path: dragData.path, content: dragData.name });
+                } else if (dragData.type === 'marker') {
+                    slide.slots[slotId].push({ 
+                        type: 'marker', 
+                        path: dragData.path, 
+                        content: `${dragData.name} - ${dragData.markerLabel}`,
+                        startTime: dragData.startTime,
+                        markerLabel: dragData.markerLabel
+                    });
+                }
+            } else {
+                if (dragData.type === 'media') {
+                    slide.slots[slotId] = { type: 'media', path: dragData.path, content: dragData.name };
+                } else if (dragData.type === 'marker') {
+                    slide.slots[slotId] = { 
+                        type: 'marker', 
+                        path: dragData.path, 
+                        content: `${dragData.name} - ${dragData.markerLabel}`,
+                        startTime: dragData.startTime,
+                        markerLabel: dragData.markerLabel
+                    };
+                }
+            }
+            
+            dragData = null;
+            renderSlideEditor();
+        }
+
+        function clearPlan() {
+            if (confirm('确定清空所有幻灯片？')) {
+                currentPlan.slides = [];
+                currentSlideIndex = 0;
+                addSlide();
+            }
+        }
+
+        async function savePlan() {
+            if (!currentPlan.name) {
+                const name = prompt('请输入备课方案名称:', '方案A');
+                if (!name) return;
+                currentPlan.name = name;
+                $('#plan-title').innerText = name;
+            }
+            const r = await fetch('/api/lesson/save', {
+                method: 'POST',
+                body: JSON.stringify(currentPlan)
+            });
+            if (r.ok) alert('方案已保存！');
+        }
+
+        async function showLoad() {
+            const r = await fetch('/api/lesson/list');
+            const list = await r.json();
+            $('#mdlTitle').innerText = '加载备课方案';
+            $('#planList').innerHTML = list.map(name => `
+                <div class="tree-node" onclick="loadPlan('${name}')">
+                    <span>📄 ${name}</span>
+                </div>
+            `).join('') || '<div style="padding:20px; text-align:center; opacity:.5">暂无方案</div>';
+            $('#planM').classList.add('show');
+        }
+
+        async function loadPlan(name) {
+            const r = await fetch(`/api/lesson/get?name=${encodeURIComponent(name)}`);
+            const data = await r.json();
+            currentPlan = data;
+            if (!currentPlan.slides || currentPlan.slides.length === 0) {
+                currentPlan.slides = [{ name: '幻灯片 1', template: 'simple', slots: { items: [] } }];
+            }
+            currentSlideIndex = 0;
+            $('#plan-title').innerText = currentPlan.name;
+            renderSlideTabs();
+            renderTemplateSelector();
+            renderSlideEditor();
+            closeM();
+        }
+
+        let targetPath = '';
+        function editTag(path) {
+            targetPath = path;
+            $('#targetFile').innerText = path;
+            $('#tagInput').value = (tagMap[path] || []).join(' ');
+            $('#tagM').classList.add('show');
+            setTimeout(() => $('#tagInput').focus(), 50);
+        }
+
+        async function doSaveTag() {
+            const tags = $('#tagInput').value.trim().split(/\s+/).filter(Boolean);
+            await fetch('/api/tags/save', {
+                method: 'POST',
+                body: JSON.stringify({ [targetPath]: tags })
+            });
+            tagMap[targetPath] = tags;
+            await refreshTree();
+            closeM();
+        }
+
+        function closeM() { document.querySelectorAll('.mdl-ov').forEach(el => el.classList.remove('show')); }
+
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') { closeM(); closePreview(); }
+        });
+
+        // === 演示模式（按模板布局，分步显示）===
+        let demoState = { overlay: null, slideIndex: 0, visibleSteps: [], totalSteps: 0 };
+        let drawState = { 
+            enabled: false, 
+            tool: 'pen', 
+            color: '#ffffff', 
+            size: 6, 
+            isDrawing: false, 
+            lastX: 0, 
+            lastY: 0, 
+            lastTime: 0,
+            slideStrokes: {},
+            currentStrokes: [],
+            laserPos: null,
+            laserVisible: false
+        };
+        const toolbarBtnStyle = `width: 36px; height: 36px; border-radius: 8px; background: rgba(255,255,255,0.05); border: 1px solid transparent; cursor: pointer; font-size: 16px; transition: all 0.2s;`;
+        const toolbarBtnActiveStyle = `background: rgba(124,106,255,0.3); border-color: #7c6aff;`;
+        const smallBtnStyle = `width: 28px; height: 28px; border-radius: 6px; background: rgba(255,255,255,0.05); border: 1px solid transparent; cursor: pointer; font-size: 14px; transition: all 0.2s;`;
+
+        function startDemo() {
+            if (currentPlan.slides.length === 0) return alert('请先添加幻灯片！');
+            
+            let hasContent = false;
+            for (const slide of currentPlan.slides) {
+                const template = TEMPLATES[slide.template];
+                if (!template) continue;
+                for (const slot of template.slots) {
+                    const data = slide.slots[slot.id];
+                    if (data && (Array.isArray(data) ? data.length > 0 : (data.path || data.trim?.()))) {
+                        hasContent = true;
+                        break;
+                    }
+                }
+                if (hasContent) break;
+            }
+            if (!hasContent) return alert('请先添加内容！');
+
+            demoState = { overlay: null, slideIndex: 0, visibleSteps: [], totalSteps: 0 };
+
+            const overlay = document.createElement('div');
+            overlay.id = 'demo-overlay';
+            overlay.style = `position: fixed; inset: 0; z-index: 1000; background: #000; display: flex; flex-direction: column;`;
+            demoState.overlay = overlay;
+
+            // 进度条
+            const progress = document.createElement('div');
+            progress.style = `position: fixed; top: 0; left: 0; right: 0; height: 4px; background: rgba(255,255,255,0.1); z-index: 1002;`;
+            const progressBar = document.createElement('div');
+            progressBar.id = 'demo-progress';
+            progressBar.style = `height: 100%; background: linear-gradient(90deg, #7c6aff, #a78bfa); transition: width 0.3s ease;`;
+            progress.appendChild(progressBar);
+            overlay.appendChild(progress);
+
+            // 计数器
+            const counter = document.createElement('div');
+            counter.id = 'demo-counter';
+            counter.style = `position: fixed; top: 20px; left: 20px; z-index: 1001; padding: 8px 16px; background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.2); border-radius: 20px; color: #fff; font-size: 14px;`;
+            overlay.appendChild(counter);
+
+            // 幻灯片名称
+            const slideName = document.createElement('div');
+            slideName.id = 'demo-slide-name';
+            slideName.style = `position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 1001; padding: 8px 20px; background: linear-gradient(135deg, #7c6aff, #a78bfa); border-radius: 20px; color: #fff; font-size: 14px; font-weight: 600;`;
+            overlay.appendChild(slideName);
+
+            // 主容器（左侧内容 + 右侧缩略图）
+            const mainContainer = document.createElement('div');
+            mainContainer.style = `flex: 1; display: flex; overflow: hidden;`;
+            overlay.appendChild(mainContainer);
+
+            // 内容区
+            const contentArea = document.createElement('div');
+            contentArea.id = 'demo-content';
+            contentArea.style = `flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px 20px;`;
+            mainContainer.appendChild(contentArea);
+
+            // 右侧缩略图导航
+            const thumbNav = document.createElement('div');
+            thumbNav.id = 'demo-thumb-nav';
+            thumbNav.style = `width: 180px; background: rgba(20,20,30,0.95); border-left: 1px solid rgba(255,255,255,0.1); display: flex; flex-direction: column; overflow: hidden;`;
+            mainContainer.appendChild(thumbNav);
+
+            // 缩略图标题
+            const thumbTitle = document.createElement('div');
+            thumbTitle.style = `padding: 12px; font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.7); border-bottom: 1px solid rgba(255,255,255,0.1); text-align: center;`;
+            thumbTitle.innerText = '📑 幻灯片导航';
+            thumbNav.appendChild(thumbTitle);
+
+            // 缩略图列表
+            const thumbList = document.createElement('div');
+            thumbList.id = 'demo-thumb-list';
+            thumbList.style = `flex: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 8px;`;
+            thumbNav.appendChild(thumbList);
+
+            // 生成缩略图
+            currentPlan.slides.forEach((slide, idx) => {
+                const thumb = document.createElement('div');
+                thumb.className = 'demo-thumb-item';
+                thumb.dataset.index = idx;
+                thumb.style = `
+                    background: rgba(255,255,255,0.05);
+                    border: 2px solid transparent;
+                    border-radius: 8px;
+                    padding: 8px;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                    position: relative;
+                `;
+                thumb.onclick = () => jumpToSlide(idx);
+
+                // 缩略图内容预览
+                const thumbContent = document.createElement('div');
+                thumbContent.style = `aspect-ratio: 16/9; background: rgba(0,0,0,0.3); border-radius: 4px; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative;`;
+                
+                // 生成缩略图预览
+                const previewHtml = generateThumbPreview(slide);
+                if (previewHtml) {
+                    thumbContent.innerHTML = previewHtml;
+                } else {
+                    thumbContent.innerHTML = `<span style="font-size: 20px; opacity: 0.3;">📄</span>`;
+                }
+                thumb.appendChild(thumbContent);
+
+                // 幻灯片编号和名称
+                const thumbLabel = document.createElement('div');
+                thumbLabel.style = `margin-top: 6px; font-size: 10px; color: rgba(255,255,255,0.6); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;`;
+                thumbLabel.innerText = `${idx + 1}. ${slide.name || '幻灯片'}`;
+                thumb.appendChild(thumbLabel);
+
+                thumbList.appendChild(thumb);
+            });
+
+            // 退出按钮
+            const closeBtn = document.createElement('button');
+            closeBtn.innerText = '✕ 退出 (Esc)';
+            closeBtn.style = `position: fixed; top: 20px; right: 200px; z-index: 1001; padding: 10px 20px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; border-radius: 20px; cursor: pointer;`;
+            closeBtn.onclick = () => { 
+                overlay.remove(); 
+                document.removeEventListener('keydown', handleDemoKey);
+                drawState.enabled = false;
+            };
+            overlay.appendChild(closeBtn);
+
+            // 提示
+            const hint = document.createElement('div');
+            hint.style = `position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); padding: 8px 20px; background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; color: rgba(255,255,255,0.5); font-size: 12px;`;
+            hint.innerHTML = '→ 或 空格 下一步 | ← 上一步 | 点击右侧缩略图跳转 | 点击左下角画笔按钮书写 | Esc 退出';
+            overlay.appendChild(hint);
+
+            // 书写画布层
+            const drawCanvas = document.createElement('canvas');
+            drawCanvas.id = 'draw-canvas';
+            drawCanvas.style = `position: absolute; inset: 0; pointer-events: none;`;
+            overlay.appendChild(drawCanvas);
+            
+            // 画笔开关按钮（左下角）
+            const drawToggle = document.createElement('button');
+            drawToggle.id = 'draw-toggle';
+            drawToggle.innerHTML = '✏️';
+            drawToggle.style = `position: absolute; left: 20px; bottom: 70px; padding: 12px 18px; background: rgba(30,30,40,0.95); border: 1px solid rgba(255,255,255,0.2); border-radius: 25px; color: #fff; cursor: pointer; font-size: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);`;
+            drawToggle.onclick = toggleDrawMode;
+            overlay.appendChild(drawToggle);
+            
+            // 画笔工具栏（左下角，紧凑版）
+            const drawToolbar = document.createElement('div');
+            drawToolbar.id = 'draw-toolbar';
+            drawToolbar.style = `position: absolute; left: 20px; bottom: 120px; display: none; flex-direction: column; gap: 6px; padding: 10px; background: rgba(30,30,40,0.95); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.5);`;
+            overlay.appendChild(drawToolbar);
+            
+            // 工具按钮行（横向排列）
+            const toolRow = document.createElement('div');
+            toolRow.style = `display: flex; gap: 4px; justify-content: center;`;
+            drawToolbar.appendChild(toolRow);
+            
+            // 画笔模式按钮
+            const penBtn = document.createElement('button');
+            penBtn.className = 'draw-tool-btn active';
+            penBtn.innerHTML = '✏️';
+            penBtn.title = '画笔';
+            penBtn.dataset.tool = 'pen';
+            penBtn.style = smallBtnStyle;
+            toolRow.appendChild(penBtn);
+            
+            // 激光笔模式
+            const laserBtn = document.createElement('button');
+            laserBtn.className = 'draw-tool-btn';
+            laserBtn.innerHTML = '�';
+            laserBtn.title = '激光笔';
+            laserBtn.dataset.tool = 'laser';
+            laserBtn.style = smallBtnStyle;
+            toolRow.appendChild(laserBtn);
+            
+            // 橡皮擦
+            const eraserBtn = document.createElement('button');
+            eraserBtn.className = 'draw-tool-btn';
+            eraserBtn.innerHTML = '🧽';
+            eraserBtn.title = '橡皮擦';
+            eraserBtn.dataset.tool = 'eraser';
+            eraserBtn.style = smallBtnStyle;
+            toolRow.appendChild(eraserBtn);
+            
+            // 撤销按钮
+            const undoBtn = document.createElement('button');
+            undoBtn.className = 'draw-tool-btn';
+            undoBtn.innerHTML = '↩️';
+            undoBtn.title = '撤销';
+            undoBtn.style = smallBtnStyle;
+            undoBtn.onclick = undoStroke;
+            toolRow.appendChild(undoBtn);
+            
+            // 颜色选择行（仅画笔使用）
+            const colorRow = document.createElement('div');
+            colorRow.id = 'color-row';
+            colorRow.style = `display: flex; gap: 3px; justify-content: center;`;
+            drawToolbar.appendChild(colorRow);
+            
+            const colors = ['#ff4444', '#ffaa00', '#44ff44', '#4488ff', '#ffffff'];
+            colors.forEach((color, idx) => {
+                const colorBtn = document.createElement('button');
+                colorBtn.className = 'draw-color-btn' + (idx === 4 ? ' active' : '');
+                colorBtn.dataset.color = color;
+                colorBtn.style = `width: 20px; height: 20px; border-radius: 50%; background: ${color}; border: 2px solid ${idx === 4 ? '#7c6aff' : 'transparent'}; cursor: pointer;`;
+                colorBtn.onclick = () => selectColor(color);
+                colorRow.appendChild(colorBtn);
+            });
+            
+            // 笔触大小
+            const sizeRow = document.createElement('div');
+            sizeRow.id = 'size-row';
+            sizeRow.style = `display: flex; align-items: center; gap: 6px;`;
+            drawToolbar.appendChild(sizeRow);
+            
+            const sizeLabel = document.createElement('span');
+            sizeLabel.style = `font-size: 10px; color: rgba(255,255,255,0.5);`;
+            sizeLabel.innerText = '粗细';
+            sizeRow.appendChild(sizeLabel);
+            
+            const sizeSlider = document.createElement('input');
+            sizeSlider.type = 'range';
+            sizeSlider.min = '2';
+            sizeSlider.max = '16';
+            sizeSlider.value = '6';
+            sizeSlider.id = 'draw-size';
+            sizeSlider.style = `flex: 1; height: 4px;`;
+            sizeRow.appendChild(sizeSlider);
+            
+            // 清除按钮
+            const clearBtn = document.createElement('button');
+            clearBtn.className = 'draw-action-btn';
+            clearBtn.innerHTML = '🗑️ 清除';
+            clearBtn.style = `padding: 6px 8px; background: rgba(248,113,113,0.2); border: 1px solid rgba(248,113,113,0.3); border-radius: 6px; color: #f87171; cursor: pointer; font-size: 11px;`;
+            clearBtn.onclick = clearCanvas;
+            drawToolbar.appendChild(clearBtn);
+            
+            document.body.appendChild(overlay);
+            document.addEventListener('keydown', handleDemoKey);
+            
+            // 初始化画布
+            initDrawCanvas();
+            
+            // 工具按钮点击事件
+            document.querySelectorAll('.draw-tool-btn').forEach(btn => {
+                btn.onclick = () => selectTool(btn.dataset.tool);
+            });
+            
+            // 计算总步骤数
+            demoState.totalSteps = calculateTotalSteps();
+            demoState.visibleSteps = [];
+            
+            renderDemoSlide();
+
+            if (overlay.requestFullscreen) overlay.requestFullscreen().catch(() => {});
+        }
+
+        function calculateTotalSteps() {
+            let total = 0;
+            currentPlan.slides.forEach(slide => {
+                const template = TEMPLATES[slide.template];
+                if (!template) return;
+                template.slots.forEach(slot => {
+                    const data = slide.slots[slot.id];
+                    if (slot.multiple && Array.isArray(data)) {
+                        total += data.length;
+                    } else if (data && (data.path || (data.trim && data.trim()))) {
+                        total += 1;
+                    }
+                });
+            });
+            return total;
+        }
+
+        function handleDemoKey(e) {
+            if (!demoState.overlay) return;
+            
+            const slide = currentPlan.slides[demoState.slideIndex];
+            const template = TEMPLATES[slide.template];
+            const maxSteps = getSlideStepCount(slide, template);
+            
+            switch(e.key) {
+                case 'ArrowRight':
+                case ' ':
+                case 'PageDown':
+                    e.preventDefault();
+                    if (demoState.visibleSteps.length < maxSteps) {
+                        // 显示下一个步骤
+                        demoState.visibleSteps.push(demoState.visibleSteps.length);
+                        renderDemoSlide();
+                    } else if (demoState.slideIndex < currentPlan.slides.length - 1) {
+                        // 切换到下一张幻灯片
+                        demoState.slideIndex++;
+                        demoState.visibleSteps = [];
+                        renderDemoSlide();
+                    }
+                    break;
+                case 'ArrowLeft':
+                case 'PageUp':
+                    e.preventDefault();
+                    if (demoState.visibleSteps.length > 0) {
+                        // 隐藏上一个步骤
+                        demoState.visibleSteps.pop();
+                        renderDemoSlide();
+                    } else if (demoState.slideIndex > 0) {
+                        // 切换到上一张幻灯片
+                        demoState.slideIndex--;
+                        const prevSlide = currentPlan.slides[demoState.slideIndex];
+                        const prevTemplate = TEMPLATES[prevSlide.template];
+                        demoState.visibleSteps = Array.from({length: getSlideStepCount(prevSlide, prevTemplate)}, (_, i) => i);
+                        renderDemoSlide();
+                    }
+                    break;
+                case 'Escape':
+                    demoState.overlay.remove();
+                    document.removeEventListener('keydown', handleDemoKey);
+                    drawState.enabled = false;
+                    demoState.overlay = null;
+                    break;
+                case 'p':
+                case 'P':
+                    toggleDrawMode();
+                    break;
+            }
+        }
+
+        function initDrawCanvas() {
+            const canvas = $('#draw-canvas');
+            if (!canvas) return;
+            
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            
+            canvas.addEventListener('mousedown', startDraw);
+            canvas.addEventListener('mousemove', draw);
+            canvas.addEventListener('mouseup', endDraw);
+            canvas.addEventListener('mouseleave', endDraw);
+            
+            canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+            canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+            canvas.addEventListener('touchend', endDraw);
+            
+            window.addEventListener('resize', () => {
+                const imgData = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height);
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+                canvas.getContext('2d').putImageData(imgData, 0, 0);
+            });
+        }
+
+        function toggleDrawMode() {
+            drawState.enabled = !drawState.enabled;
+            const canvas = $('#draw-canvas');
+            const toolbar = $('#draw-toolbar');
+            const toggle = $('#draw-toggle');
+            
+            if (drawState.enabled) {
+                canvas.style.pointerEvents = 'auto';
+                toolbar.style.display = 'flex';
+                toggle.innerHTML = '❌';
+                toggle.style.background = 'linear-gradient(135deg, #7c6aff, #a78bfa)';
+                toggle.style.borderColor = '#7c6aff';
+            } else {
+                canvas.style.pointerEvents = 'none';
+                toolbar.style.display = 'none';
+                toggle.innerHTML = '✏️';
+                toggle.style.background = 'rgba(30,30,40,0.95)';
+                toggle.style.borderColor = 'rgba(255,255,255,0.2)';
+            }
+        }
+
+        function selectTool(tool) {
+            drawState.tool = tool;
+            document.querySelectorAll('.draw-tool-btn').forEach(btn => {
+                if (btn.dataset.tool === tool) {
+                    btn.style.cssText = smallBtnStyle + toolbarBtnActiveStyle;
+                } else {
+                    btn.style.cssText = smallBtnStyle;
+                }
+            });
+            
+            const colorRow = $('#color-row');
+            const sizeRow = $('#size-row');
+            if (tool === 'laser') {
+                if (colorRow) colorRow.style.display = 'none';
+                if (sizeRow) sizeRow.style.display = 'none';
+            } else {
+                if (colorRow) colorRow.style.display = 'flex';
+                if (sizeRow) sizeRow.style.display = 'flex';
+            }
+        }
+
+        function undoStroke() {
+            const slideIdx = demoState.slideIndex;
+            if (!drawState.slideStrokes[slideIdx]) return;
+            
+            if (drawState.slideStrokes[slideIdx].length > 0) {
+                drawState.slideStrokes[slideIdx].pop();
+                redrawCanvas();
+            }
+        }
+
+        function saveCurrentStrokes() {
+            const slideIdx = demoState.slideIndex;
+            if (!drawState.slideStrokes[slideIdx]) {
+                drawState.slideStrokes[slideIdx] = [];
+            }
+            drawState.slideStrokes[slideIdx] = drawState.slideStrokes[slideIdx].concat(drawState.currentStrokes);
+            drawState.currentStrokes = [];
+        }
+
+        function redrawCanvas() {
+            const canvas = $('#draw-canvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            const slideIdx = demoState.slideIndex;
+            const strokes = drawState.slideStrokes[slideIdx] || [];
+            
+            strokes.forEach(stroke => {
+                if (stroke.points.length < 2) return;
+                
+                ctx.beginPath();
+                ctx.strokeStyle = stroke.color;
+                ctx.lineWidth = stroke.size;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                ctx.globalAlpha = stroke.opacity || 1;
+                
+                ctx.moveTo(stroke.points[0].x, stroke.points[0].y);
+                for (let i = 1; i < stroke.points.length; i++) {
+                    ctx.lineTo(stroke.points[i].x, stroke.points[i].y);
+                }
+                ctx.stroke();
+            });
+            ctx.globalAlpha = 1;
+        }
+
+        function selectColor(color) {
+            drawState.color = color;
+            document.querySelectorAll('.draw-color-btn').forEach(btn => {
+                btn.style.borderColor = btn.dataset.color === color ? '#7c6aff' : 'transparent';
+            });
+        }
+
+        function clearCanvas() {
+            const slideIdx = demoState.slideIndex;
+            drawState.slideStrokes[slideIdx] = [];
+            drawState.currentStrokes = [];
+            const canvas = $('#draw-canvas');
+            if (canvas) {
+                canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+            }
+        }
+
+        function startDraw(e) {
+            if (!drawState.enabled) return;
+            
+            if (drawState.tool === 'laser') {
+                drawState.laserVisible = true;
+                drawState.laserPos = { x: e.clientX, y: e.clientY };
+                drawLaser();
+                return;
+            }
+            
+            drawState.isDrawing = true;
+            
+            const x = e.clientX;
+            const y = e.clientY;
+            drawState.lastX = x;
+            drawState.lastY = y;
+            drawState.lastTime = Date.now();
+            
+            drawState.currentStrokes.push({
+                tool: drawState.tool,
+                color: drawState.color,
+                size: parseInt($('#draw-size')?.value || 6),
+                points: [{ x, y }]
+            });
+        }
+
+        function handleTouchStart(e) {
+            if (!drawState.enabled) return;
+            e.preventDefault();
+            const touch = e.touches[0];
+            startDraw({ clientX: touch.clientX, clientY: touch.clientY });
+        }
+
+        function handleTouchMove(e) {
+            if (!drawState.enabled) return;
+            e.preventDefault();
+            const touch = e.touches[0];
+            if (drawState.tool === 'laser') {
+                moveLaser({ clientX: touch.clientX, clientY: touch.clientY });
+            } else {
+                draw({ clientX: touch.clientX, clientY: touch.clientY });
+            }
+        }
+
+        function moveLaser(e) {
+            if (!drawState.laserVisible) return;
+            drawState.laserPos = { x: e.clientX, y: e.clientY };
+            drawLaser();
+        }
+
+        function drawLaser() {
+            const canvas = $('#draw-canvas');
+            const ctx = canvas.getContext('2d');
+            
+            redrawCanvas();
+            
+            if (!drawState.laserVisible || !drawState.laserPos) return;
+            
+            const x = drawState.laserPos.x;
+            const y = drawState.laserPos.y;
+            
+            ctx.beginPath();
+            ctx.arc(x, y, 12, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(255, 0, 0, 0.3)';
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.arc(x, y, 6, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(255, 50, 50, 0.6)';
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.arc(x, y, 3, 0, Math.PI * 2);
+            ctx.fillStyle = '#ff0000';
+            ctx.fill();
+        }
+
+        function draw(e) {
+            if (!drawState.isDrawing || !drawState.enabled) return;
+            if (drawState.tool === 'laser') {
+                moveLaser(e);
+                return;
+            }
+            
+            const canvas = $('#draw-canvas');
+            const ctx = canvas.getContext('2d');
+            const x = e.clientX;
+            const y = e.clientY;
+            const now = Date.now();
+            
+            const dx = x - drawState.lastX;
+            const dy = y - drawState.lastY;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            
+            if (dist < 1) return;
+            
+            const dt = now - drawState.lastTime;
+            const speed = dt > 0 ? dist / dt : 0;
+            
+            let baseSize = parseInt($('#draw-size')?.value || 6);
+            let size = baseSize;
+            
+            if (drawState.tool === 'pen') {
+                size = baseSize * (1 - Math.min(speed * 0.3, 0.5));
+                size = Math.max(baseSize * 0.4, Math.min(baseSize * 1.1, size));
+            } else if (drawState.tool === 'eraser') {
+                size = baseSize * 4;
+            }
+            
+            const currentStroke = drawState.currentStrokes[drawState.currentStrokes.length - 1];
+            if (currentStroke) {
+                currentStroke.points.push({ x, y });
+            }
+            
+            ctx.beginPath();
+            ctx.moveTo(drawState.lastX, drawState.lastY);
+            ctx.lineTo(x, y);
+            
+            if (drawState.tool === 'eraser') {
+                ctx.globalCompositeOperation = 'destination-out';
+                ctx.strokeStyle = 'rgba(0,0,0,1)';
+            } else {
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.strokeStyle = drawState.color;
+                ctx.globalAlpha = 1;
+            }
+            
+            ctx.lineWidth = size;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.stroke();
+            ctx.globalAlpha = 1;
+            
+            drawState.lastX = x;
+            drawState.lastY = y;
+            drawState.lastTime = now;
+        }
+
+        function endDraw() {
+            if (drawState.tool === 'laser') {
+                drawState.laserVisible = false;
+                redrawCanvas();
+                return;
+            }
+            drawState.isDrawing = false;
+            saveCurrentStrokes();
+        }
+
+        function getSlideStepCount(slide, template) {
+            if (!template) return 0;
+            let count = 0;
+            template.slots.forEach(slot => {
+                const data = slide.slots[slot.id];
+                if (slot.multiple && Array.isArray(data)) {
+                    count += data.length;
+                } else if (data && (data.path || (data.trim && data.trim()))) {
+                    count += 1;
+                }
+            });
+            return count;
+        }
+
+        function jumpToSlide(idx) {
+            if (idx < 0 || idx >= currentPlan.slides.length) return;
+            demoState.slideIndex = idx;
+            demoState.visibleSteps = [0];
+            renderDemoSlide();
+        }
+
+        function generateThumbPreview(slide) {
+            const template = TEMPLATES[slide.template];
+            if (!template || !slide.slots) return '';
+            
+            let html = '';
+            const slots = template.slots;
+            
+            if (template.layout === 'horizontal') {
+                html = '<div style="display: flex; gap: 2px; width: 100%; height: 100%; padding: 4px;">';
+                slots.forEach(slot => {
+                    const data = slide.slots[slot.id];
+                    if (data && data.path) {
+                        const isVid = /\.(mp4|webm|mkv|mov)$/i.test(data.path);
+                        if (isVid) {
+                            html += '<div style="flex: 1; background: rgba(124,106,255,0.3); border-radius: 2px; display: flex; align-items: center; justify-content: center; font-size: 12px;">🎬</div>';
+                        } else {
+                            const u = `/files/${encodeURIComponent(data.path).replace(/%2F/g, '/')}`;
+                            html += `<img src="${u}" style="flex: 1; object-fit: cover; border-radius: 2px;">`;
+                        }
+                    } else {
+                        html += '<div style="flex: 1; background: rgba(255,255,255,0.05); border-radius: 2px;"></div>';
+                    }
+                });
+                html += '</div>';
+            } else if (template.layout === 'full') {
+                const slot = slots[0];
+                const data = slide.slots[slot.id];
+                if (data && data.path) {
+                    const isVid = /\.(mp4|webm|mkv|mov)$/i.test(data.path);
+                    if (isVid) {
+                        html = '<div style="width: 100%; height: 100%; background: rgba(124,106,255,0.3); display: flex; align-items: center; justify-content: center; font-size: 24px;">🎬</div>';
+                    } else {
+                        const u = `/files/${encodeURIComponent(data.path).replace(/%2F/g, '/')}`;
+                        html = `<img src="${u}" style="width: 100%; height: 100%; object-fit: cover;">`;
+                    }
+                }
+            } else {
+                html = '<div style="display: flex; flex-direction: column; gap: 2px; width: 100%; height: 100%; padding: 4px;">';
+                slots.forEach(slot => {
+                    const data = slide.slots[slot.id];
+                    if (slot.multiple && Array.isArray(data) && data.length > 0) {
+                        html += `<div style="flex: 1; background: rgba(124,106,255,0.2); border-radius: 2px; display: flex; align-items: center; justify-content: center; font-size: 8px; color: rgba(255,255,255,0.5);">${data.length}项</div>`;
+                    } else if (data) {
+                        if (slot.type === 'text' && data.trim && data.trim()) {
+                            html += `<div style="flex: 1; background: rgba(255,255,255,0.1); border-radius: 2px; display: flex; align-items: center; justify-content: center; font-size: 8px; color: rgba(255,255,255,0.5); padding: 2px; overflow: hidden;">📝</div>`;
+                        } else if (data.path) {
+                            const isVid = /\.(mp4|webm|mkv|mov)$/i.test(data.path);
+                            if (isVid) {
+                                html += '<div style="flex: 1; background: rgba(124,106,255,0.3); border-radius: 2px; display: flex; align-items: center; justify-content: center; font-size: 12px;">🎬</div>';
+                            } else {
+                                const u = `/files/${encodeURIComponent(data.path).replace(/%2F/g, '/')}`;
+                                html += `<img src="${u}" style="flex: 1; object-fit: cover; border-radius: 2px;">`;
+                            }
+                        } else {
+                            html += '<div style="flex: 1; background: rgba(255,255,255,0.05); border-radius: 2px;"></div>';
+                        }
+                    } else {
+                        html += '<div style="flex: 1; background: rgba(255,255,255,0.05); border-radius: 2px;"></div>';
+                    }
+                });
+                html += '</div>';
+            }
+            
+            return html;
+        }
+
+        function updateThumbHighlight() {
+            const items = document.querySelectorAll('.demo-thumb-item');
+            items.forEach((item, idx) => {
+                if (idx === demoState.slideIndex) {
+                    item.style.borderColor = '#7c6aff';
+                    item.style.background = 'rgba(124,106,255,0.2)';
+                    item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                } else {
+                    item.style.borderColor = 'transparent';
+                    item.style.background = 'rgba(255,255,255,0.05)';
+                }
+            });
+        }
+
+        function renderDemoSlide() {
+            const slide = currentPlan.slides[demoState.slideIndex];
+            const template = TEMPLATES[slide.template];
+            const content = $('#demo-content');
+            const counter = $('#demo-counter');
+            const progress = $('#demo-progress');
+            const slideName = $('#demo-slide-name');
+
+            const maxSteps = getSlideStepCount(slide, template);
+            
+            // 计算全局进度
+            let globalStep = 0;
+            for (let i = 0; i < demoState.slideIndex; i++) {
+                globalStep += getSlideStepCount(currentPlan.slides[i], TEMPLATES[currentPlan.slides[i].template]);
+            }
+            globalStep += demoState.visibleSteps.length;
+            
+            counter.innerText = `${globalStep} / ${demoState.totalSteps}`;
+            progress.style.width = `${(globalStep / demoState.totalSteps) * 100}%`;
+            slideName.innerText = slide.name || `幻灯片 ${demoState.slideIndex + 1}`;
+            updateThumbHighlight();
+            redrawCanvas();
+
+            if (!template) {
+                content.innerHTML = '<div style="color:#fff; font-size:24px;">模板未找到</div>';
+                return;
+            }
+
+            // 根据模板布局渲染
+            let stepIndex = 0;
+            const layout = template.layout;
+
+            if (layout === 'full') {
+                // 全屏媒体
+                const slot = template.slots[0];
+                const data = slide.slots[slot.id];
+                if (data && demoState.visibleSteps.includes(stepIndex)) {
+                    content.innerHTML = renderDemoSlotItem(data, true);
+                } else {
+                    content.innerHTML = '';
+                }
+            } else if (layout === 'horizontal') {
+                // 双栏布局
+                let html = '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; width: 100%; max-width: 1600px;">';
+                template.slots.forEach(slot => {
+                    const data = slide.slots[slot.id];
+                    const visible = data && (data.path || (Array.isArray(data) && data.length > 0)) && demoState.visibleSteps.includes(stepIndex);
+                    html += `<div style="display: flex; align-items: center; justify-content: center; min-height: 300px;">`;
+                    if (visible) {
+                        html += renderDemoSlotItem(data, false);
+                    }
+                    html += '</div>';
+                    if (data && (data.path || (Array.isArray(data) && data.length > 0))) stepIndex++;
+                });
+                html += '</div>';
+                content.innerHTML = html;
+            } else {
+                // 垂直布局（列表、标题+媒体、完整模板等）
+                let html = '<div style="display: flex; flex-direction: column; gap: 24px; width: 100%; max-width: 1200px; align-items: center;">';
+                
+                template.slots.forEach(slot => {
+                    const data = slide.slots[slot.id];
+                    
+                    if (slot.multiple && Array.isArray(data)) {
+                        // 多项目槽位
+                        data.forEach((item, idx) => {
+                            const visible = demoState.visibleSteps.includes(stepIndex);
+                            if (visible) {
+                                if (item.type === 'text') {
+                                    html += `<div style="text-align: center; animation: fadeIn 0.5s ease;">${renderDemoText(item.content)}</div>`;
+                                } else {
+                                    html += `<div style="animation: fadeIn 0.5s ease;">${renderDemoMedia(item)}</div>`;
+                                }
+                            }
+                            stepIndex++;
+                        });
+                    } else if (data) {
+                        // 单项目槽位
+                        const hasContent = data.path || (data.trim && data.trim());
+                        if (hasContent) {
+                            const visible = demoState.visibleSteps.includes(stepIndex);
+                            if (visible) {
+                                if (slot.type === 'text') {
+                                    html += `<div style="text-align: center; animation: fadeIn 0.5s ease;">${renderDemoText(data)}</div>`;
+                                } else {
+                                    html += `<div style="animation: fadeIn 0.5s ease;">${renderDemoMedia(data)}</div>`;
+                                }
+                            }
+                            stepIndex++;
+                        }
+                    }
+                });
+                
+                html += '</div>';
+                content.innerHTML = html;
+            }
+        }
+
+        function renderDemoText(text) {
+            return `<div style="color: #fff; font-size: 36px; line-height: 1.6; font-weight: 500; text-shadow: 0 4px 30px rgba(0,0,0,0.5);">${text.replace(/\n/g, '<br>')}</div>`;
+        }
+
+        function renderDemoMedia(item) {
+            const isVid = /\.(mp4|webm|mkv|mov)$/i.test(item.path);
+            const u = `/files/${encodeURIComponent(item.path).replace(/%2F/g, '/')}`;
+            
+            if (item.type === 'marker') {
+                return `
+                    <div style="text-align: center;">
+                        <div style="margin-bottom: 16px; padding: 12px 24px; background: linear-gradient(135deg, #7c6aff, #a78bfa); color: #fff; font-size: 18px; font-weight: 600; border-radius: 30px; display: inline-block;">
+                            🎯 ${item.markerLabel || '书签点'} <span style="opacity: 0.8; margin-left: 8px;">${formatTime(item.startTime)}</span>
+                        </div>
+                        <video src="${u}" controls autoplay style="max-width: 100%; max-height: 65vh; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.5);"></video>
+                    </div>
+                `;
+            }
+            
+            if (isVid) {
+                return `<video src="${u}" controls autoplay style="max-width: 100%; max-height: 70vh; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.5);"></video>`;
+            } else {
+                return `<img src="${u}" style="max-width: 100%; max-height: 70vh; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.5);">`;
+            }
+        }
+
+        function renderDemoSlotItem(data, isFull) {
+            if (!data) return '';
+            
+            if (data.path) {
+                const isVid = /\.(mp4|webm|mkv|mov)$/i.test(data.path);
+                const u = `/files/${encodeURIComponent(data.path).replace(/%2F/g, '/')}`;
+                
+                if (data.type === 'marker') {
+                    return `
+                        <div style="text-align: center;">
+                            <div style="margin-bottom: 16px; padding: 12px 24px; background: linear-gradient(135deg, #7c6aff, #a78bfa); color: #fff; font-size: 18px; font-weight: 600; border-radius: 30px; display: inline-block;">
+                                🎯 ${data.markerLabel || '书签点'} <span style="opacity: 0.8; margin-left: 8px;">${formatTime(data.startTime)}</span>
+                            </div>
+                            <video src="${u}" controls autoplay style="max-width: 100%; max-height: 65vh; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.5);"></video>
+                        </div>
+                    `;
+                }
+                
+                const sizeStyle = isFull ? 'width: 100%; height: 80vh;' : 'max-width: 100%; max-height: 60vh;';
+                if (isVid) {
+                    return `<video src="${u}" controls autoplay style="${sizeStyle} border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.5);"></video>`;
+                } else {
+                    return `<img src="${u}" style="${sizeStyle} border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); object-fit: contain;">`;
+                }
+            }
+            
+            if (typeof data === 'string' && data.trim()) {
+                return `<div style="color: #fff; font-size: 36px; line-height: 1.6; font-weight: 500; text-shadow: 0 4px 30px rgba(0,0,0,0.5); text-align: center;">${data.replace(/\n/g, '<br>')}</div>`;
+            }
+            
+            return '';
+        }
+    </script>
+
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</body>
+
+</html>

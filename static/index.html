@@ -1220,8 +1220,8 @@
             justify-content: center;
             border-radius: 12px;
             transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-            max-width: 100%;
-            max-height: 100%;
+            width: 100%;
+            height: 100%;
         }
 
         /* 强化版自动播放绿色发光特效（呼吸感） */
@@ -1250,6 +1250,8 @@
         .lb-stage img {
             max-width: 100%;
             max-height: 100%;
+            width: auto;
+            height: auto;
             object-fit: contain;
             display: block;
             /* 消除底边空隙 */
@@ -1299,17 +1301,17 @@
         /* 缩略图条 */
         .lb-strip {
             flex-shrink: 0;
-            padding: 12px 20px;
+            padding: 6px 20px;
             display: flex;
-            gap: 8px;
+            gap: 6px;
             justify-content: center;
             overflow-x: auto
         }
 
         .lb-strip .lb-th {
-            width: 64px;
-            height: 44px;
-            border-radius: 6px;
+            width: 56px;
+            height: 36px;
+            border-radius: 4px;
             overflow: hidden;
             cursor: pointer;
             border: 2px solid transparent;
@@ -1336,11 +1338,11 @@
         /* === 灯箱控制条 (底部固定) === */
         .lb-bar {
             flex-shrink: 0;
-            height: 60px;
+            height: 48px;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 16px;
+            gap: 12px;
             background: rgba(0, 0, 0, 0.4);
             backdrop-filter: blur(10px);
             z-index: 402;
@@ -1358,9 +1360,9 @@
             background: transparent;
             border: none;
             color: rgba(255, 255, 255, 0.8);
-            font-size: 20px;
-            width: 44px;
-            height: 44px;
+            font-size: 18px;
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -1382,14 +1384,14 @@
 
         .lb-bar .sep {
             width: 1px;
-            height: 24px;
+            height: 20px;
             background: rgba(255, 255, 255, 0.2);
             margin: 0 4px;
         }
 
         /* 隐藏原始缩略图条 (全屏模式或幻灯片模式下可选，这里先保留，只微调位置) */
         .lb.show .lb-strip {
-            display: none;
+            display: flex;
         }
 
         /* 左右箭头 */
@@ -1575,6 +1577,8 @@
                 <span></span>
                 <p id="ipText">192.168.x.x</p>
             </a>
+            <button class="icon-btn" onclick="window.open('/lesson','_blank')" title="备课系统"
+                style="background:var(--accent);color:#fff;border:none">✨</button>
             <button class="icon-btn" onclick="toggleTheme()" title="切换主题" id="themeBtn">🌓</button>
             <button class="icon-btn" onclick="toggleView()" title="切换布局" id="viewBtn">🔲</button>
             <button class="icon-btn" onclick="showMkdir()" title="新建文件夹">📁</button>
@@ -1670,6 +1674,9 @@
             </div>
             <button class="lb-arrow next" onclick="lbStop();lbGo(1)">›</button>
         </div>
+
+        <!-- 缩略图导航条 -->
+        <div class="lb-strip" id="lbStrip"></div>
 
         <div class="lb-bar">
             <button onclick="lbStop();lbGo(-1)" title="上一张 (←)">⏮</button>
@@ -1953,6 +1960,12 @@
                 img.onload = () => {
                     img.style.opacity = 1;
                     img.style.transform = `scale(1) rotate(${lbR}deg)`;
+                    // 确保图片完全显示
+                    img.style.maxWidth = '100%';
+                    img.style.maxHeight = '100%';
+                    img.style.objectFit = 'contain';
+                    // 渲染缩略图条
+                    renderStrip();
                 };
             }, 100);
 
