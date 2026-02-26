@@ -1581,7 +1581,7 @@
                 style="background:var(--accent);color:#fff;border:none">✨</button>
             <button class="icon-btn" onclick="toggleTheme()" title="切换主题" id="themeBtn">🌓</button>
             <button class="icon-btn" onclick="toggleView()" title="切换布局" id="viewBtn">🔲</button>
-            <button class="icon-btn" onclick="showMkdir()" title="新建文件夹">📁</button>
+
             <button class="icon-btn" id="upBtn" onclick="toggleUpMenu()" title="上传">⬆</button>
             <div class="upload-menu" id="upMenu">
                 <button onclick="$('#fi').click();hideUpMenu()">📄 上传文件</button>
@@ -1706,17 +1706,7 @@
         </div>
     </div>
 
-    <!-- 新建文件夹 -->
-    <div class="mdl-ov" id="mkdirM">
-        <div class="mdl">
-            <h3>新建文件夹</h3>
-            <input type="text" id="mkdirN" placeholder="输入名称">
-            <div class="macts">
-                <button class="mbtn" onclick="$('#mkdirM').classList.remove('show')">取消</button>
-                <button class="mbtn primary" onclick="doMkdir()">创建</button>
-            </div>
-        </div>
-    </div>
+
 
     <script>
         const $ = s => document.querySelector(s), $$ = s => document.querySelectorAll(s);
@@ -1901,6 +1891,10 @@
             if (isDir) { nav(cur ? cur + '/' + name : name); }
             else if (imgE.test(name)) { lbi = imgs.findIndex(f => f.name === name); openLB(); }
             else if (vidE.test(name)) { openVP(name); }
+            else if (name.toLowerCase().endsWith('.md')) {
+                const fp = cur ? cur + '/' + name : name;
+                window.open(`/reader?path=${encodeURIComponent(fp)}`, '_blank');
+            }
             else window.open(fileUrl(name), '_blank');
         }
 
@@ -2328,13 +2322,7 @@
             });
         }
 
-        // === 新建文件夹 ===
-        function showMkdir() { $('#mkdirM').classList.add('show'); $('#mkdirN').value = ''; setTimeout(() => $('#mkdirN').focus(), 50); }
-        async function doMkdir() {
-            const n = $('#mkdirN').value.trim(); if (!n) return;
-            await fetch(`/api/mkdir?path=${encodeURIComponent(cur ? cur + '/' + n : n)}`, { method: 'POST' });
-            $('#mkdirM').classList.remove('show'); load();
-        }
+
 
 
         // === 键盘 ===
@@ -2357,8 +2345,7 @@
                 if (k === 'm') addMark();
                 if (e.key === 'Escape') closeVP();
             }
-            if ($('#mkdirM').classList.contains('show') && e.key === 'Enter') doMkdir();
-            if (e.key === 'Escape') { $('#mkdirM').classList.remove('show'); clearSel(); }
+
         });
 
         // === 工具 ===

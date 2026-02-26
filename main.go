@@ -174,11 +174,11 @@ func startServer() {
 	mux.HandleFunc("/api/share", handleShare)
 	mux.HandleFunc("/api/list", handleList)
 	mux.HandleFunc("/api/upload", handleUpload)
-	mux.HandleFunc("/api/mkdir", handleMkdir)
 
 	mux.HandleFunc("/api/status", handleStatus)
 	mux.HandleFunc("/api/markers/get", handleGetMarkers)
 	mux.HandleFunc("/api/markers/save", handleSaveMarkers)
+	mux.HandleFunc("/api/md", handleGetMD)
 
 	// --- 备课系统 API ---
 	mux.HandleFunc("/api/tags/getAll", handleGetAllTags)
@@ -190,6 +190,11 @@ func startServer() {
 
 	mux.HandleFunc("/lesson", func(w http.ResponseWriter, r *http.Request) {
 		data, _ := staticFS.ReadFile("static/lesson.html")
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.Write(data)
+	})
+	mux.HandleFunc("/reader", func(w http.ResponseWriter, r *http.Request) {
+		data, _ := staticFS.ReadFile("static/reader.html")
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.Write(data)
 	})
@@ -312,25 +317,6 @@ func handleUpload(w http.ResponseWriter, r *http.Request) {
 	}
 	defer outFile.Close()
 	io.Copy(outFile, r.Body)
-	w.Write([]byte("OK"))
-}
-
-func handleMkdir(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "方法不允许", http.StatusMethodNotAllowed)
-		return
-	}
-	relPath := cleanRelPath(r.URL.Query().Get("path"))
-	if relPath == "" {
-		http.Error(w, "缺少路径参数", http.StatusBadRequest)
-		return
-	}
-	absPath := filepath.Join(rootDir, filepath.FromSlash(relPath))
-	if !isPathSafe(absPath) {
-		http.Error(w, "禁止访问", http.StatusForbidden)
-		return
-	}
-	os.MkdirAll(absPath, 0755)
 	w.Write([]byte("OK"))
 }
 
@@ -831,6 +817,26 @@ func sin(rad float64) float64 {
 }
 
 // 判断点是否在多边形内（射线法）
+func handleGetMD(w http.ResponseWriter, r *http.Request) {
+	relPath := cleanRelPath(r.URL.Query().Get("path"))
+	if relPath == "" {
+		http.Error(w, "缺少路径参数", http.StatusBadRequest)
+		return
+	}
+	absPath := filepath.Join(rootDir, filepath.FromSlash(relPath))
+	if !isPathSafe(absPath) {
+		http.Error(w, "禁止访问", http.StatusForbidden)
+		return
+	}
+	data, err := os.ReadFile(absPath)
+	if err != nil {
+		http.Error(w, "读取文件失败", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.Write(data)
+}
+
 func isInsidePolygon(x, y float64, points [][2]float64) bool {
 	n := len(points)
 	inside := false

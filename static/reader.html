@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FireReader - 专业课堂阅览</title>
+    <!-- 引入专业字体 -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Noto+Serif+SC:wght@400;700&display=swap"
+        rel="stylesheet">
+    <!-- KaTeX 数学公式 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+    <!-- Highlight.js 代码高亮 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.8.0/styles/github-dark.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.8.0/lib/highlight.min.js"></script>
+    <!-- Marked.js 解析器 -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        :root {
+            --bg: #fdfdfc;
+            --text: #1a1a1a;
+            --accent: #7c6aff;
+            --font-main: 'Noto Serif SC', serif;
+            --font-sans: 'Inter', system-ui, sans-serif;
+            --fs: 28px;
+            /* 默认大字号，适合课堂 */
+        }
+
+        [data-theme="dark"] {
+            --bg: #0f0f14;
+            --text: #e0e0e0;
+            --accent: #a78bfa;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--font-main);
+            overflow: hidden;
+            /* 禁止全屏滚动 */
+            height: 100vh;
+            width: 100vw;
+            transition: background 0.3s;
+        }
+
+        /* 顶部标题栏 */
+        .top-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            padding: 0 30px;
+            background: rgba(var(--bg), 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 10;
+            font-family: var(--font-sans);
+            font-size: 14px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            opacity: 0.3;
+            transition: opacity 0.3s;
+        }
+
+        .top-bar:hover {
+            opacity: 1;
+        }
+
+        .title {
+            flex: 1;
+            font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-right: 20px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn {
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+
+        .btn:hover {
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        /* 分页核心容器 */
+        #viewport {
+            width: 100vw;
+            height: 100vh;
+            padding: 80px 20vw 100px;
+            /* 增加边距，中间预留 60vw 给内容 */
+            overflow: hidden;
+            position: relative;
+        }
+
+        #content {
+            height: 100%;
+            width: 60vw;
+            /* 页面内容固定在 60vw 的杂志宽度 */
+            /* 关键：多列布局实现无缝分页 */
+            column-width: 60vw;
+            column-gap: 40vw;
+            /* 间距设为 40vw，则起始位置间隔正好 100vw */
+            column-fill: auto;
+            transition: transform 0.6s cubic-bezier(0.2, 0, 0.2, 1);
+            font-size: var(--fs);
+            line-height: 1.7;
+            text-align: justify;
+        }
+
+        /* 确保元素完整性，不跨列被截断 */
+        img,
+        pre,
+        blockquote,
+        .katex-display {
+            break-inside: avoid;
+            page-break-inside: avoid;
+            display: block;
+            max-width: 100%;
+        }
+
+        /* 强制分页符逻辑：使用 --- 进行分页 */
+        hr,
+        .break {
+            break-before: column;
+            page-break-before: column;
+            border: none;
+            margin: 0;
+            height: 0;
+            visibility: hidden;
+        }
+
+        /* MD 元素样式优化 */
+        h1,
+        h2,
+        h3 {
+            font-family: var(--font-sans);
+            margin-top: 1.5em;
+            margin-bottom: 0.8em;
+            line-height: 1.2;
+            color: var(--accent);
+        }
+
+        h1 {
+            font-size: 2.2em;
+            border-bottom: 3px solid var(--accent);
+            display: inline-block;
+            padding-bottom: 5px;
+        }
+
+        p {
+            margin-bottom: 1em;
+        }
+
+        img {
+            max-width: 100%;
+            border-radius: 12px;
+            margin: 1em 0;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        code {
+            font-family: monospace;
+            background: rgba(0, 0, 0, 0.05);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+
+        pre {
+            background: #1e1e2e;
+            padding: 20px;
+            border-radius: 12px;
+            overflow-x: auto;
+            margin: 1.5em 0;
+            color: #fff;
+        }
+
+        blockquote {
+            border-left: 6px solid var(--accent);
+            padding-left: 20px;
+            font-style: italic;
+            color: #666;
+            margin: 1.5em 0;
+        }
+
+        /* 公式样式矫正 */
+        .katex-display {
+            margin: 1.2em 0;
+            overflow-x: visible;
+            overflow-y: hidden;
+        }
+
+        /* 底栏页码 */
+        .footer {
+            position: fixed;
+            bottom: 25px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            font-family: var(--font-sans);
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .page-info {
+            background: var(--accent);
+            color: #fff;
+            padding: 4px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 700;
+            box-shadow: 0 4px 15px var(--accent);
+            opacity: 0.8;
+        }
+
+        /* 翻页热区 */
+        .nav-zone {
+            position: fixed;
+            top: 50px;
+            bottom: 0;
+            width: 15vw;
+            z-index: 5;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            color: var(--accent);
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        .nav-zone:hover {
+            opacity: 0.5;
+        }
+
+        .nav-zone.left {
+            left: 0;
+        }
+
+        .nav-zone.right {
+            right: 0;
+        }
+
+        /* 进度条 */
+        .progress-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            height: 4px;
+            background: var(--accent);
+            width: 0%;
+            transition: width 0.3s;
+            z-index: 20;
+        }
+
+        /* 鼠标激光笔指引 */
+        body::after {
+            content: '';
+            position: fixed;
+            width: 80px;
+            height: 80px;
+            background: radial-gradient(circle, var(--accent) 0%, transparent 70%);
+            opacity: 0.2;
+            pointer-events: none;
+            z-index: 999;
+            left: var(--mx, -100px);
+            top: var(--my, -100px);
+            transform: translate(-50%, -50%);
+            transition: opacity 0.3s;
+        }
+
+        /* 图片大图查看器 */
+        .img-viewer {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 2000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            cursor: move;
+            /* 设为可拖动 */
+            backdrop-filter: blur(5px);
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        .img-viewer.show {
+            display: flex;
+        }
+
+        .img-viewer img {
+            max-width: 95%;
+            max-height: 95%;
+            object-fit: contain;
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
+            border-radius: 4px;
+            transition: transform 0.1s ease-out;
+            /* 缩放时保持平滑 */
+            transform: translate(var(--ix, 0), var(--iy, 0)) scale(var(--is, 1));
+            user-select: none;
+            -webkit-user-drag: none;
+        }
+
+        /* 缩放指示器 */
+        .zoom-tip {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--accent);
+            color: white;
+            padding: 5px 20px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 700;
+            z-index: 2001;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .img-viewer.show .zoom-tip {
+            opacity: 0.8;
+        }
+
+        /* 侧边目录线 - 左右分散布局 */
+        #toc-left,
+        #toc-right {
+            position: fixed;
+            top: 60%;
+            /* 位于导航箭头 (50%) 下方 */
+            width: 160px;
+            max-height: 35vh;
+            overflow-y: auto;
+            z-index: 100;
+            font-family: var(--font-sans);
+            opacity: 0.1;
+            transition: opacity 0.3s, transform 0.3s;
+            scrollbar-width: none;
+            pointer-events: auto;
+        }
+
+        #toc-left {
+            left: 2vw;
+            border-left: 3px solid var(--accent);
+            padding-left: 15px;
+            text-align: left;
+        }
+
+        #toc-right {
+            right: 2vw;
+            border-right: 3px solid var(--accent);
+            padding-right: 15px;
+            text-align: right;
+        }
+
+        #toc-left:hover,
+        #toc-right:hover {
+            opacity: 1;
+            transform: translateX(5px);
+        }
+
+        #toc-right:hover {
+            transform: translateX(-5px);
+        }
+
+        #toc-left::-webkit-scrollbar,
+        #toc-right::-webkit-scrollbar {
+            display: none;
+        }
+
+        .toc-item {
+            font-size: 12px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            color: var(--text);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            transition: all 0.2s;
+            opacity: 0.7;
+        }
+
+        .toc-item:hover {
+            opacity: 1;
+            color: var(--accent);
+            font-weight: 700;
+        }
+
+        .toc-h1 {
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .toc-h2 {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        .toc-h3 {
+            font-size: 11px;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+
+<body data-theme="dark">
+
+    <div class="top-bar">
+        <div class="title" id="pageTitle">正在加载...</div>
+        <div class="controls">
+            <span class="btn" onclick="adjustSize(-2)">A-</span>
+            <span class="btn" onclick="adjustSize(2)">A+</span>
+            <span class="btn" onclick="toggleTheme()">🌓 主题</span>
+            <span class="btn" onclick="window.close()">✕ 关闭</span>
+        </div>
+    </div>
+
+    <div class="nav-zone left" onclick="prevPage()">‹</div>
+    <div class="nav-zone right" onclick="nextPage()">›</div>
+
+    <div id="viewport">
+        <div id="content"></div>
+    </div>
+
+    <div id="imgViewer" class="img-viewer">
+        <div class="zoom-tip">滚轮缩放 / 鼠标拖拽 / 双击关闭</div>
+        <img src="" alt="" id="vImg">
+    </div>
+
+    <!-- 左右双侧目录导引线 -->
+    <div id="toc-left"></div>
+    <div id="toc-right"></div>
+
+    <div class="footer">
+        <div class="page-info" id="pageInfo">1 / 1</div>
+    </div>
+
+    <div class="progress-bar" id="prog"></div>
+
+    <script>
+        let curPage = 0;
+        let totalPages = 1;
+
+        async function init() {
+            const params = new URLSearchParams(window.location.search);
+            const path = params.get('path');
+            if (!path) {
+                document.getElementById('content').innerHTML = '<h1>未找到文件路径</h1>';
+                return;
+            }
+
+            const fileName = path.split('/').pop();
+            document.getElementById('pageTitle').innerText = fileName;
+            document.title = fileName + ' - FireReader';
+
+            try {
+                const res = await fetch(`/api/md?path=${encodeURIComponent(path)}`);
+                const text = await res.text();
+
+                // 配置 Marked
+                marked.setOptions({
+                    highlight: function (code, lang) {
+                        return hljs.highlightAuto(code).value;
+                    }
+                });
+
+                // 渲染 MD
+                document.getElementById('content').innerHTML = marked.parse(text);
+
+                // 渲染公式
+                renderMathInElement(document.getElementById('content'), {
+                    delimiters: [
+                        { left: '$$', right: '$$', display: true },
+                        { left: '$', right: '$', display: false },
+                        { left: '\\(', right: '\\)', display: false },
+                        { left: '\\[', right: '\\]', display: true }
+                    ],
+                    throwOnError: false
+                });
+
+                // 绑定图片点击事件
+                let isScale = 1, ix = 0, iy = 0, isDrag = false, startX, startY;
+                const viewer = document.getElementById('imgViewer');
+                const vImg = document.getElementById('vImg');
+
+                document.getElementById('content').onclick = e => {
+                    if (e.target.tagName === 'IMG') {
+                        vImg.src = e.target.src;
+                        isScale = 1; ix = 0; iy = 0;
+                        updateImgTransform();
+                        viewer.classList.add('show');
+                    }
+                };
+
+                function updateImgTransform() {
+                    vImg.style.setProperty('--is', isScale);
+                    vImg.style.setProperty('--ix', ix + 'px');
+                    vImg.style.setProperty('--iy', iy + 'px');
+                }
+
+                // 缩放逻辑 (滚轮)
+                viewer.onwheel = e => {
+                    e.preventDefault();
+                    const delta = e.deltaY > 0 ? -0.2 : 0.2;
+                    isScale = Math.max(0.5, Math.min(5, isScale + delta));
+                    updateImgTransform();
+                };
+
+                // 触摸支持 (双指缩放 & 单指拖拽)
+                let initialDist = 0;
+                viewer.ontouchstart = e => {
+                    if (e.touches.length === 1) {
+                        isDrag = true;
+                        startX = e.touches[0].clientX - ix;
+                        startY = e.touches[0].clientY - iy;
+                    } else if (e.touches.length === 2) {
+                        isDrag = false;
+                        initialDist = Math.hypot(
+                            e.touches[0].clientX - e.touches[1].clientX,
+                            e.touches[0].clientY - e.touches[1].clientY
+                        );
+                    }
+                };
+
+                viewer.ontouchmove = e => {
+                    e.preventDefault();
+                    if (e.touches.length === 1 && isDrag) {
+                        ix = e.touches[0].clientX - startX;
+                        iy = e.touches[0].clientY - startY;
+                        updateImgTransform();
+                    } else if (e.touches.length === 2) {
+                        const dist = Math.hypot(
+                            e.touches[0].clientX - e.touches[1].clientX,
+                            e.touches[0].clientY - e.touches[1].clientY
+                        );
+                        const delta = dist / initialDist;
+                        isScale = Math.max(0.5, Math.min(5, isScale * delta));
+                        initialDist = dist;
+                        updateImgTransform();
+                    }
+                };
+
+                viewer.ontouchend = () => { isDrag = false; };
+
+                // 拖拽逻辑 (鼠标)
+                viewer.onmousedown = e => {
+                    if (e.button !== 0) return;
+                    isDrag = true;
+                    startX = e.clientX - ix;
+                    startY = e.clientY - iy;
+                };
+
+                window.onmousemove = e => {
+                    // 之前的激光笔逻辑
+                    document.body.style.setProperty('--mx', e.clientX + 'px');
+                    document.body.style.setProperty('--my', e.clientY + 'px');
+
+                    if (isDrag) {
+                        ix = e.clientX - startX;
+                        iy = e.clientY - startY;
+                        updateImgTransform();
+                    }
+                };
+
+                window.onmouseup = () => { isDrag = false; };
+
+                // 双击或 Esc 关闭
+                viewer.ondblclick = () => viewer.classList.remove('show');
+
+                // 回调计算分页并生成目录
+                setTimeout(() => {
+                    updatePagination();
+                    generateTOC();
+                }, 500);
+
+            } catch (e) {
+                console.error(e);
+                document.getElementById('content').innerHTML = '<h1>内容加载失败</h1>';
+            }
+        }
+
+        function generateTOC() {
+            const headings = Array.from(document.querySelectorAll('#content h1, #content h2, #content h3'));
+            const tocL = document.getElementById('toc-left');
+            const tocR = document.getElementById('toc-right');
+            const vw = window.innerWidth;
+
+            const mid = Math.ceil(headings.length / 2);
+            const leftHeadings = headings.slice(0, mid);
+            const rightHeadings = headings.slice(mid);
+
+            const toHtml = (h) => {
+                const page = Math.floor(h.offsetLeft / vw);
+                const level = h.tagName.toLowerCase();
+                return `<div class="toc-item toc-${level}" onclick="jumpToPage(${page})">${h.innerText}</div>`;
+            };
+
+            tocL.innerHTML = leftHeadings.map(toHtml).join('');
+            tocR.innerHTML = rightHeadings.map(toHtml).join('');
+        }
+
+        function jumpToPage(p) {
+            curPage = p;
+            updateUI();
+        }
+
+        function updatePagination() {
+            const content = document.getElementById('content');
+            const viewport = document.getElementById('viewport');
+
+            // 计算总宽度 / 视口宽度
+            const scrollW = content.scrollWidth;
+            const clientW = viewport.clientWidth;
+            totalPages = Math.max(1, Math.ceil(scrollW / clientW));
+
+            updateUI();
+        }
+
+        function updateUI() {
+            const content = document.getElementById('content');
+
+            // 限制范围
+            if (curPage < 0) curPage = 0;
+            if (curPage >= totalPages) curPage = totalPages - 1;
+
+            // 关键：位移使用 vw 单位，对应 column-width + column-gap 的完整视口宽度
+            content.style.transform = `translateX(-${curPage * 100}vw)`;
+
+            // 页码与进度
+            document.getElementById('pageInfo').innerText = `${curPage + 1} / ${totalPages}`;
+            document.getElementById('prog').style.width = `${((curPage + 1) / totalPages) * 100}%`;
+        }
+
+        function nextPage() {
+            if (curPage < totalPages - 1) {
+                curPage++;
+                updateUI();
+            }
+        }
+
+        function prevPage() {
+            if (curPage > 0) {
+                curPage--;
+                updateUI();
+            }
+        }
+
+        function adjustSize(delta) {
+            const root = document.documentElement;
+            const currentSize = parseInt(getComputedStyle(root).getPropertyValue('--fs'));
+            root.style.setProperty('--fs', (currentSize + delta) + 'px');
+            // 调整字号后需要重新计算分页
+            setTimeout(() => {
+                updatePagination();
+                generateTOC();
+            }, 300);
+        }
+
+        function toggleTheme() {
+            const body = document.body;
+            body.dataset.theme = body.dataset.theme === 'dark' ? 'light' : 'dark';
+        }
+
+        // 键盘翻页支持
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') nextPage();
+            if (e.key === 'ArrowLeft') prevPage();
+            if (e.key === 'Escape') document.getElementById('imgViewer').classList.remove('show');
+        });
+
+        // 激光笔随动已移动到 init 内部统一管理
+
+        // 视口大小变化监听
+        window.addEventListener('resize', () => {
+            updatePagination();
+            generateTOC();
+        });
+
+        init();
+    </script>
+</body>
+
+</html>
